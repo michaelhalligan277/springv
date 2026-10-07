@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#A6192E">
+<title>E4454 Daily Equipment Checkout</title>
+<style>
+
+  :root{
+    --red:#A6192E; --dark:#1A1A1A; --gray:#666; --light:#F2F2F2; --line:#999;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{font-family:Arial, Helvetica, sans-serif; margin:0; background:#fff; color:#000;
+       padding-bottom:90px;}
+  .wrap{max-width:880px; margin:0 auto; padding:12px 14px;}
+
+  .topline{display:flex; justify-content:space-between; font-size:12px; font-weight:bold;
+           padding:6px 2px; color:var(--red);}
+  .topline span:last-child{color:var(--gray); font-weight:normal;}
+
+  .redbar{background:var(--red); color:#fff; font-weight:900; font-size:clamp(19px,4.5vw,26px);
+          letter-spacing:.5px; padding:12px 16px; text-transform:uppercase;}
+  .darkbar{background:var(--dark); color:#fff; font-weight:bold; font-size:14px;
+           letter-spacing:.5px; padding:8px 14px; text-transform:uppercase; margin-top:18px;}
+
+  .meta{display:grid; grid-template-columns:1fr 1.4fr .6fr; gap:10px; margin:14px 0 4px;}
+  .meta label{display:block; font-size:11px; font-weight:bold; text-transform:uppercase;
+              letter-spacing:.4px; margin-bottom:3px;}
+  .meta input{width:100%; font-size:16px; padding:9px 10px; border:1px solid var(--line);
+              border-radius:0; font-family:inherit;}
+  @media (max-width:560px){ .meta{grid-template-columns:1fr 1fr;} .meta .f-date{grid-column:1 / -1;} }
+
+  /* equipment rows */
+  .eq{border:1px solid var(--line); border-top:none;}
+  .eq:first-of-type{border-top:1px solid var(--line);}
+  .eq:nth-of-type(even){background:var(--light);}
+  .eq{padding:10px 12px;}
+  .eq .name{font-weight:bold; font-size:15px;}
+  .eq .sub{font-size:11.5px; color:var(--gray); font-style:italic; margin-top:1px;}
+  .checks{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:8px;}
+  .chk{display:flex; align-items:center; gap:7px; font-size:14.5px; min-height:34px; cursor:pointer;}
+  .chk input[type=checkbox]{width:22px; height:22px; accent-color:var(--red); flex:none;}
+  .inline-field{display:flex; align-items:center; gap:8px; font-size:14px; margin-top:6px;}
+  .inline-field input{font-size:15px; padding:6px 8px; border:1px solid var(--line); width:150px;
+                      font-family:inherit;}
+  .comment{margin-top:8px;}
+  .comment input{width:100%; font-size:14px; padding:7px 9px; border:1px solid var(--line);
+                 font-family:inherit;}
+  .comment input::placeholder{color:#aaa;}
+
+  /* SCBA grid */
+  .scba-note{font-size:11.5px; color:var(--gray); font-style:italic; margin:6px 2px 0;}
+  .scba{border:1px solid var(--line); border-top:none; padding:10px 12px;}
+  .scba:nth-of-type(even){background:var(--light);}
+  .scba .name{font-weight:bold; font-size:15px; display:flex; align-items:center;
+              justify-content:space-between; gap:10px;}
+  .scba .psi{display:flex; align-items:center; gap:6px; font-size:13px; font-weight:bold;}
+  .scba .psi input{width:90px; font-size:15px; padding:6px 8px; border:1px solid var(--line);
+                   font-family:inherit;}
+  .scba .checks{margin-top:6px;}
+  .scba .init{display:flex; align-items:center; gap:6px; font-size:13px; font-weight:bold; margin-top:6px;}
+  .scba .init input{width:70px; font-size:15px; padding:6px 8px; border:1px solid var(--line);
+                    font-family:inherit;}
+
+  /* additional equipment */
+  .addl{border:1px solid var(--line); border-top:none; padding:10px 12px;}
+  .addl:nth-of-type(even){background:var(--light);}
+  .addl input{width:100%; font-size:14px; padding:7px 9px; border:1px solid var(--line);
+              font-family:inherit; margin-top:6px;}
+  .addl input:first-child{margin-top:0; font-weight:bold;}
+
+  /* reminders */
+  .rem{border:1px solid var(--line); border-top:none; padding:8px 12px;}
+  .rem .chk{font-size:14px;}
+  .rem b{margin-right:4px;}
+
+  /* action bar */
+  .actions{position:fixed; left:0; right:0; bottom:0; background:#fff;
+           border-top:2px solid var(--red); display:flex; gap:10px; padding:10px 14px;
+           padding-bottom:calc(10px + env(safe-area-inset-bottom)); z-index:10;}
+  .actions button{flex:1; font-family:inherit; font-size:16px; font-weight:bold; padding:13px 10px;
+                  border:none; cursor:pointer;}
+  #savePdf{background:var(--red); color:#fff;}
+  #clearForm{background:#fff; color:var(--dark); border:1px solid var(--line); flex:0 0 32%;}
+  .savehint{font-size:11.5px; color:var(--gray); margin:14px 2px 4px; font-style:italic;}
+  .draftnote{font-size:11px; color:var(--gray); margin:2px;}
+
+  .notesbox{border:1px solid var(--line); border-top:none; padding:10px 12px;}
+  .notesbox textarea{width:100%; font-family:inherit; font-size:15px; padding:8px 10px;
+    border:1px solid var(--line); resize:vertical; min-height:90px;}
+
+  /* ---------- print ---------- */
+  @media print{
+    @page{size:letter portrait; margin:.45in;}
+    body{padding-bottom:0; font-size:11px;}
+    .wrap{max-width:none; padding:0;}
+    .actions,.savehint,.draftnote{display:none !important;}
+    .redbar{padding:8px 12px; font-size:18px; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .darkbar{padding:5px 10px; font-size:11px; margin-top:8px; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .eq,.scba,.addl,.rem{padding:4px 8px; break-inside:avoid;}
+    .eq:nth-of-type(even),.scba:nth-of-type(even),.addl:nth-of-type(even){-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .eq .name,.scba .name{font-size:11px;}
+    .eq .sub,.scba-note{font-size:8.5px;}
+    .checks{gap:2px 12px; margin-top:2px;}
+    .chk{font-size:10px; min-height:auto; gap:4px;}
+    .chk input[type=checkbox]{width:11px; height:11px;}
+    .meta{margin:6px 0 2px;}
+    .meta input,.inline-field input,.comment input,.scba .psi input,.scba .init input,.addl input{
+      border:none; border-bottom:1px solid #000; padding:1px 2px; font-size:10px;}
+    .comment{margin-top:2px;}
+    .comment input:placeholder-shown{border-bottom:1px solid #bbb;}
+    .inline-field{font-size:10px; margin-top:2px;}
+    .scba .checks{margin-top:2px;}
+    .scba .init{margin-top:2px; font-size:10px;}
+    .topline{font-size:8.5px;}
+    .notesbox{padding:2px 8px;}
+    .notesbox textarea{border:1px solid #000; min-height:50px; font-size:10px; resize:none;}
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex; position:sticky; top:0; z-index:9; background:#fff;
+        border-bottom:2px solid var(--red);}
+  .tabs button{flex:1; font-family:inherit; font-size:13px; font-weight:bold; padding:11px 6px;
+               border:none; background:#fff; color:var(--dark); cursor:pointer; line-height:1.2;
+               border-bottom:4px solid transparent; text-transform:uppercase; letter-spacing:.3px;}
+  .tabs button.active{color:var(--red); border-bottom-color:var(--red);}
+  @media (max-width:600px){ .tabs button{font-size:11px; padding:9px 3px; letter-spacing:0;} }
+  #view-gas{display:none;}
+  #view-util{display:none;}
+  #view-aed{display:none;}
+  body.aed #view-checkout{display:none;}
+  body.aed #view-aed{display:block;}
+  body.aed .actions{display:none;}
+  #e-inv{display:none;}
+  body.esub-inv #e-sheet{display:none;}
+  body.esub-inv #e-inv{display:block;}
+  body.esub-inv:not(.util) .actions{display:none;}
+  body.gas #view-checkout{display:none;}
+  body.gas #view-gas{display:block;}
+  body.util #view-checkout{display:none;}
+  body.util #view-util{display:block;}
+  body.gas .actions{display:none;}
+  body.util.usub-inv .actions{display:none;}
+
+  /* utility sub-tabs */
+  .subtabs{display:flex; margin:12px 0 4px; border:1px solid var(--red);}
+  .subtabs button{flex:1; font-family:inherit; font-size:14px; font-weight:bold; padding:10px 8px;
+    border:none; background:#fff; color:var(--red); cursor:pointer; text-transform:uppercase;
+    letter-spacing:.3px;}
+  .subtabs button.active{background:var(--red); color:#fff;}
+  #u-inv{display:none;}
+  .udue{margin:10px 0 0; padding:8px 12px; font-size:13px; font-weight:bold; border:1px solid var(--line);
+    background:var(--light);}
+  .udue.due{background:#FBEDE8; color:var(--red); border-color:var(--red);}
+  @media print{ .udue{display:none !important;} }
+  body.usub-inv #u-sheet{display:none;}
+  body.usub-inv #u-inv{display:block;}
+
+  /* ---------- inventory ---------- */
+  .inv-tools{display:flex; gap:8px; margin:12px 0;}
+  .inv-tools input{flex:1; font-size:16px; padding:10px 12px; border:1px solid var(--line);
+                   font-family:inherit;}
+  .inv-tools button{font-family:inherit; font-size:13px; font-weight:bold; padding:0 14px;
+                    border:1px solid var(--line); background:#fff; cursor:pointer;}
+  details.comp{border:1px solid var(--line); margin-bottom:10px; background:#fff;}
+  details.comp > summary{list-style:none; cursor:pointer; display:flex; align-items:center;
+    justify-content:space-between; gap:10px; background:var(--red); color:#fff;
+    font-weight:900; font-size:15px; padding:11px 14px; text-transform:uppercase;
+    letter-spacing:.4px;}
+  details.comp > summary::-webkit-details-marker{display:none;}
+  details.comp > summary .prog{font-family:inherit; font-weight:bold; font-size:12px;
+    background:rgba(255,255,255,.18); padding:3px 9px; white-space:nowrap;}
+  details.comp > summary .prog.done{background:#fff; color:var(--red);}
+  .comp-body{padding:12px;}
+  .comp-note{font-size:13px; color:var(--gray); font-style:italic; margin:0 0 10px;}
+  .photos{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px;}
+  .photos figure{margin:0; flex:1 1 240px; max-width:420px;}
+  .photos img{width:100%; height:auto; display:block; border:1px solid var(--line);}
+  .photos figcaption{font-size:11.5px; color:var(--gray); font-style:italic; text-align:center;
+                     padding-top:3px;}
+  .items{border:1px solid var(--line);}
+  .item{display:flex; align-items:center; gap:10px; padding:8px 10px; font-size:14.5px;
+        border-top:1px solid var(--line); cursor:pointer;}
+  .item:first-child{border-top:none;}
+  .item:nth-child(even){background:var(--light);}
+  .item input[type=checkbox]{width:22px; height:22px; accent-color:var(--red); flex:none;}
+  .item .qty{font-weight:bold; min-width:26px; text-align:center; flex:none;}
+  .item.hit{background:#F9E3E7;}
+  .item.miss{display:none;}
+  .inv-foot{font-size:11.5px; color:var(--gray); font-style:italic; margin:10px 2px 20px;}
+
+  /* nested medical bag inventory */
+  details.bag{border:1px solid var(--line); margin-top:12px;}
+  details.bag > summary{list-style:none; cursor:pointer; display:flex; align-items:center;
+    justify-content:space-between; gap:10px; background:var(--dark); color:#fff;
+    font-weight:900; font-size:13.5px; padding:10px 12px; text-transform:uppercase;
+    letter-spacing:.4px;}
+  details.bag > summary::-webkit-details-marker{display:none;}
+  details.bag > summary .prog{font-weight:bold; font-size:12px;
+    background:rgba(255,255,255,.18); padding:3px 9px; white-space:nowrap;}
+  details.bag > summary .prog.done{background:#fff; color:var(--dark);}
+  .bag-body{padding:10px;}
+  .bag-note{font-size:12px; color:var(--gray); font-style:italic; margin:0 0 10px;}
+  .bag-cat-group{margin-top:10px;}
+  .bag-cat-group:first-of-type{margin-top:0;}
+  .bag-cat{background:var(--dark); color:#fff; font-weight:bold; font-size:12px;
+    text-transform:uppercase; letter-spacing:.5px; padding:7px 10px;}
+  .bag-row .item{border-top:1px solid var(--line); background:transparent;}
+  .bag-row:first-of-type .item{border-top:none;}
+  .bag-row:nth-of-type(even){background:var(--light);}
+  .bag-row .item.hit{background:#F9E3E7;}
+  .item .info{margin-left:auto; flex:none; width:26px; height:26px; border-radius:50%;
+    border:1px solid var(--line); background:#fff; color:var(--gray); font-weight:bold;
+    font-size:13px; cursor:pointer; font-family:inherit; padding:0; line-height:1;}
+  .use{display:none; font-size:12.5px; color:var(--gray); padding:2px 12px 10px 64px;
+    line-height:1.45;}
+  .use.open{display:block;}
+  .item.miss + .use{display:none !important;}
+  .item .exp{margin-left:auto; flex:none; font-size:11.5px; font-weight:bold; padding:2px 8px;
+    white-space:nowrap; background:#E8F5E9; color:#2E7D32;}
+  .item .exp.soon{background:#FFF3E0; color:#B25B00;}
+  .item .exp.expired{background:var(--red); color:#fff;}
+  .item .expwrap{margin-left:auto; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px;}
+  .item .expwrap .exp{margin-left:0;}
+
+  /* lightbox */
+  #lightbox{position:fixed; inset:0; background:rgba(0,0,0,.92); display:none;
+            align-items:center; justify-content:center; z-index:50; cursor:zoom-out;}
+  #lightbox img{max-width:96vw; max-height:94vh;}
+  #lightbox.open{display:flex;}
+
+  @media print{
+    .tabs, #view-gas, #view-aed, #lightbox, #e-inv{display:none !important;}
+    body.gas #view-checkout, body.aed #view-checkout{display:block;}
+    #e-sheet{display:block !important;}
+    #view-util{display:none !important;}
+    body.util #view-checkout{display:none !important;}
+    body.util #view-util{display:block !important;}
+    body.util #u-sheet{display:block !important;}
+    .subtabs, #u-inv{display:none !important;}
+  }
+
+  /* ---------- Altair 4XR reference ---------- */
+  .gasbar{background:var(--red); color:#fff; font-weight:900; font-size:14px;
+    letter-spacing:.4px; padding:9px 14px; text-transform:uppercase; margin-top:18px;
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .gasbar .fnote{font-size:11px; font-weight:bold; background:rgba(255,255,255,.18);
+    padding:3px 9px; white-space:nowrap;}
+  .gasbar .fnote:empty{display:none;}
+  .gas-note{border:1px solid var(--line); background:var(--light); padding:10px 14px; margin-top:14px;}
+  .gas-note b.hd{color:var(--red); font-size:12px; text-transform:uppercase; letter-spacing:.5px;}
+  .gas-note ul{margin:6px 0 0; padding-left:18px;}
+  .gas-note li{font-size:13.5px; margin:4px 0; line-height:1.45;}
+  .gas-note.warm{background:#FBEDE8;}
+  ol.gas-steps{border:1px solid var(--line); border-top:none; margin:0; padding:10px 14px 12px 34px;}
+  ol.gas-steps li{font-size:14px; margin:7px 0; line-height:1.5;}
+  ol.gas-steps li::marker{color:var(--red); font-weight:bold;}
+  .trow{display:grid; grid-template-columns:150px 1fr; gap:10px; border:1px solid var(--line);
+    border-top:none; padding:9px 12px; font-size:13.5px; line-height:1.45;}
+  .trow:nth-of-type(even){background:var(--light);}
+  .trow b{color:var(--red);}
+  @media (max-width:560px){ .trow{grid-template-columns:1fr; gap:2px;} }
+  .gas-foot{font-size:11px; color:var(--gray); font-style:italic; margin:16px 2px 24px;}
+
+  .log-when{font-size:12.5px; color:var(--gray); border:1px solid var(--line); border-top:none;
+    margin:0; padding:8px 14px; background:var(--light); line-height:1.5;}
+  .log-when b{color:var(--red);}
+  @media print{ #altairLog .log-form{display:none !important;} }
+
+  /* Altair monthly log */
+  .log-form{border:1px solid var(--line); border-top:none; padding:12px 14px;}
+  .log-grid{display:grid; grid-template-columns:1.2fr .8fr .8fr; gap:10px;}
+  .log-grid label, .log-notes{display:block; font-size:11px; font-weight:bold;
+    text-transform:uppercase; letter-spacing:.4px;}
+  .log-grid input, .log-grid select, .log-notes input{width:100%; font-size:16px; padding:9px 10px;
+    border:1px solid var(--line); font-family:inherit; margin-top:3px; background:#fff;}
+  .log-form .checks{margin:10px 0 4px;}
+  .log-notes{margin-top:8px;}
+  #lg_add{margin-top:12px; width:100%; font-family:inherit; font-size:15px; font-weight:bold;
+    padding:12px; border:none; background:var(--red); color:#fff; cursor:pointer;}
+  .log-entry{border:1px solid var(--line); border-top:none; padding:9px 12px; font-size:13.5px;
+    display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;}
+  .log-entry:nth-of-type(even){background:var(--light);}
+  .log-entry b.date{white-space:nowrap;}
+  .log-entry .res{font-weight:900; padding:1px 8px; color:#fff; background:#2E7D32; font-size:11.5px;}
+  .log-entry .res.fail{background:var(--red);}
+  .log-entry .done{color:var(--gray); font-size:12.5px;}
+  .log-entry .note{flex-basis:100%; color:var(--gray); font-size:12.5px; font-style:italic; margin-top:2px;}
+  .log-entry .del{margin-left:auto; border:1px solid var(--line); background:#fff; color:var(--gray);
+    font-weight:bold; cursor:pointer; padding:2px 9px; font-family:inherit; font-size:14px;}
+  @media (max-width:560px){ .log-grid{grid-template-columns:1fr 1fr;}
+    .log-grid label:first-child{grid-column:1 / -1;} }
+
+  /* AED monthly log */
+  .aed-sec{font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.4px;
+    color:var(--red); margin:14px 0 2px; border-top:1px solid var(--line); padding-top:10px;}
+  .aed-sec:first-of-type{border-top:none; padding-top:0; margin-top:4px;}
+  .yn{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0;
+    border-bottom:1px solid #e3e3e3; font-size:14.5px;}
+  .yn select{font-size:15px; padding:6px 8px; border:1px solid var(--line); font-family:inherit;
+    background:#fff; min-width:92px;}
+  .yn select.no{border-color:var(--red); color:var(--red); font-weight:bold;}
+  .expgrid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;}
+  .expgrid label{display:block; font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.4px;}
+  .expgrid input{width:100%; font-size:16px; padding:8px 10px; border:1px solid var(--line);
+    font-family:inherit; margin-top:3px; background:#fff;}
+  @media (max-width:560px){ .expgrid{grid-template-columns:1fr;} }
+  #ag_add{margin-top:12px; width:100%; font-family:inherit; font-size:15px; font-weight:bold;
+    padding:12px; border:none; background:var(--red); color:#fff; cursor:pointer;}
+  .aed-cur{border:1px solid var(--line); border-top:none;}
+  .aed-cur .row{display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:8px 12px; font-size:14px; border-top:1px solid #e3e3e3;}
+  .aed-cur .row:first-child{border-top:none;}
+  .aed-cur .empty{padding:10px 12px; font-size:13px; color:var(--gray); font-style:italic;}
+  .tag{font-size:11.5px; font-weight:bold; padding:2px 8px; white-space:nowrap; background:#E8F5E9; color:#2E7D32;}
+  .tag.soon{background:#FFF3E0; color:#B25B00;}
+  .tag.expired{background:var(--red); color:#fff;}
+  .tag.none{background:var(--light); color:var(--gray);}
+  .log-entry .exps{flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;}
+  .log-entry img.sig{height:26px; vertical-align:middle;}
+
+  /* electronic EMS-711-2 */
+  .f7hdr{display:grid; grid-template-columns:.8fr 1.4fr 1.4fr .8fr .8fr; gap:10px;}
+  .f7hdr label{display:block; font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.4px;}
+  .f7hdr input{width:100%; font-size:15px; padding:8px 9px; border:1px solid var(--line);
+    font-family:inherit; margin-top:3px; background:#fff;}
+  @media (max-width:760px){ .f7hdr{grid-template-columns:1fr 1fr;} }
+  .padlab{display:flex; justify-content:space-between; align-items:center; margin-top:10px;
+    font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.4px;}
+  .padclear{font-family:inherit; font-size:12px; font-weight:bold; border:1px solid var(--line);
+    background:#fff; padding:4px 12px; cursor:pointer;}
+  canvas.sigpad{display:block; width:100%; max-width:420px; height:110px; margin-top:4px;
+    border:1px dashed #888; background:#fff; touch-action:none; cursor:crosshair;}
+  .bigbtn{margin-top:12px; width:100%; font-family:inherit; font-size:15px; font-weight:bold;
+    padding:12px; border:none; background:var(--red); color:#fff; cursor:pointer;}
+  .bigbtn.dark{background:var(--dark); margin-bottom:6px;}
+  .t7wrap{overflow-x:auto; border:1px solid var(--line); border-top:none;}
+  table.t7{width:100%; border-collapse:collapse; font-size:13px;}
+  table.t7 th{background:var(--dark); color:#fff; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.3px; padding:6px; text-align:left;}
+  table.t7 td{border-top:1px solid #ddd; padding:4px 6px; vertical-align:middle; height:34px;}
+  table.t7 tr.today td{background:#FFF8E1;}
+  table.t7 td.d{font-weight:bold; width:34px; text-align:center;}
+  table.t7 td.no{color:var(--red); font-weight:bold;}
+  table.t7 img{height:28px; vertical-align:middle;}
+  table.t7 .x{border:1px solid var(--line); background:#fff; color:var(--gray); font-weight:bold;
+    cursor:pointer; padding:1px 7px; font-family:inherit;}
+  .f7stat{margin-top:8px; font-size:12.5px; font-weight:bold; padding:6px 10px; cursor:pointer;
+    background:#FBEDE8; color:var(--red); border:1px solid var(--red);}
+  .f7stat.ok{background:#E8F5E9; color:#2E7D32; border-color:#2E7D32;}
+  @media print{ .f7stat{border:none; background:none; padding:0;} }
+
+  /* 60-day expiration summary (top of each checkout sheet) */
+  .expsum{margin:12px 0 4px; border:1px solid var(--line);}
+  .expsum .hd{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--dark); color:#fff; font-weight:bold; font-size:13px; text-transform:uppercase;
+    letter-spacing:.4px; padding:7px 12px;}
+  .expsum .hd small{font-size:11px; text-transform:none; letter-spacing:0; font-weight:normal; opacity:.85;}
+  .expsum.alert .hd{background:var(--red);}
+  .expsum .r{display:flex; align-items:center; gap:10px; padding:7px 12px; border-top:1px solid #e3e3e3; font-size:14px;}
+  .expsum .r:first-of-type{border-top:none;}
+  .expsum .r .what{flex:1;}
+  .expsum .r .what small{color:var(--gray);}
+  .expsum .r .when{font-size:12px; color:var(--gray); white-space:nowrap;}
+  .expsum .ok{padding:9px 12px; font-size:13.5px; background:#E8F5E9; color:#2E7D32; font-weight:bold;}
+  .expsum .ok span{font-weight:normal; color:#333;}
+  @media print{
+    .expsum{margin:5px 0 2px; break-inside:avoid;}
+    .expsum .hd{padding:3px 8px; font-size:9.5px; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .expsum .r, .expsum .ok{padding:2px 8px; font-size:9.5px; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .expsum .tag{font-size:8.5px; padding:0 5px; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  }
+
+  /* leftover-draft banner */
+  .stale{margin:12px 0 0; padding:10px 12px; border:2px solid #B25B00; background:#FFF3E0; font-size:14px;}
+  .stale b{display:block; color:#8a4600; margin-bottom:2px;}
+  .stale span{font-size:13px; color:#333;}
+  .stale-btns{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;}
+  .stale-btns button{font-family:inherit; font-size:14px; font-weight:bold; padding:9px 14px; cursor:pointer;
+    border:1px solid var(--line); background:#fff;}
+  .stale-btns .fresh{background:var(--red); color:#fff; border-color:var(--red);}
+
+  .backup{margin:18px 0 6px; padding:10px 12px; border:1px dashed var(--line); background:var(--light); font-size:13px;}
+  .backup b{display:block; margin-bottom:2px;}
+  .backup .bkinfo{display:block; margin-top:6px; color:var(--gray); font-size:12px;}
+
+  /* print clean-up */
+  @media print{
+    .stale, .noprint, #lg_add{display:none !important;}
+    .gasbar{-webkit-print-color-adjust:exact; print-color-adjust:exact; padding:4px 10px; font-size:11px; margin-top:8px;}
+    #altairLog{break-inside:avoid; page-break-inside:avoid;}
+    .log-when{padding:3px 8px; font-size:9.5px;}
+    .log-entry{padding:3px 8px; font-size:9.5px;}
+    .rem .chk{font-size:10px;}
+    .f7stat{font-size:9.5px; margin-top:2px; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    textarea::placeholder, input::placeholder{color:transparent;}
+  }
+
+  #f711print{display:none;}
+  @media print{
+    body.print711 > *{display:none !important;}
+    body.print711 > #f711print{display:block !important;}
+  }
+  #f711print{font-family:Arial, Helvetica, sans-serif; color:#000; font-size:10px;}
+  #f711print .pg{page-break-after:always; break-after:page;}
+  #f711print .pg:last-child{page-break-after:auto; break-after:auto;}
+  #f711print .hd{display:flex; justify-content:space-between; align-items:flex-start;}
+  #f711print .agency{font-size:9px; line-height:1.3;}
+  #f711print .title{font-size:13px; font-weight:bold; line-height:1.2;}
+  #f711print .formno{font-size:9px;}
+  #f711print table{width:100%; border-collapse:collapse;}
+  #f711print td, #f711print th{border:1px solid #000; padding:2px 4px; vertical-align:top;}
+  #f711print .lbl{font-size:7.5px; text-transform:uppercase; display:block;}
+  #f711print .val{font-size:10.5px; min-height:13px; display:block;}
+  #f711print .note{font-weight:bold; margin:5px 0 3px; font-size:10px;}
+  #f711print .daily th{font-size:7.5px; font-weight:normal; text-transform:uppercase; text-align:center;}
+  #f711print .daily td{height:19px; font-size:9.5px; vertical-align:middle;}
+  #f711print .daily td.c{text-align:center;}
+  #f711print .daily img{height:16px; vertical-align:middle;}
+  #f711print .foot{text-align:center; font-size:9px; margin-top:4px;}
+  #f711print h3{text-align:center; font-size:12px; margin:10px 0 6px;}
+  #f711print p, #f711print ol{font-size:10px; line-height:1.4; margin:4px 0;}
+  #f711print .mchk td{height:20px; vertical-align:middle;}
+  #f711print .bx{display:inline-block; width:12px; height:12px; border:1px solid #000; text-align:center;
+    line-height:12px; font-weight:bold; font-size:10px;}
+  #f711print .sigimg{height:26px; vertical-align:middle;}
+  #f711print .gen{font-size:8px; color:#444; margin-top:8px; font-style:italic;}
+</style>
+</head>
+<body>
+<div class="tabs">
+  <button id="tab-checkout" class="active" type="button">Engine 4454 Checkout</button>
+  <button id="tab-gas" type="button">Altair 4XR</button>
+  <button id="tab-aed" type="button">AED</button>
+  <button id="tab-util" type="button">Utility 4454 Checkout</button>
+</div>
+
+<div id="view-checkout">
+<div class="wrap">
+
+  <div class="topline"><span>CAL FIRE &bull; ENGINE 4454</span><span>SKULL CREEK FOREST FIRE STATION</span></div>
+  <div class="redbar">E4454 Daily Equipment Checkout</div>
+
+  <div class="subtabs">
+    <button id="esub-sheet" class="active" type="button">Checkout Sheet</button>
+    <button id="esub-inv" type="button">Compartment Inventory</button>
+  </div>
+
+  <div id="e-sheet">
+  <div class="stale" id="eStale" hidden></div>
+  <div class="meta">
+    <div class="f-date">
+      <label for="f_date">Date</label>
+      <input type="date" id="f_date" data-k="date">
+    </div>
+    <div>
+      <label for="f_by">Checked by</label>
+      <input type="text" id="f_by" data-k="by" autocomplete="off">
+    </div>
+    <div>
+      <label for="f_init">Initials</label>
+      <input type="text" id="f_init" data-k="init" autocomplete="off" maxlength="6">
+    </div>
+  </div>
+
+  <div class="expsum" id="expSumE"></div>
+
+  <div class="darkbar">Equipment &mdash; walk-around order</div>
+  <div id="equipmentA"></div>
+
+  <div class="darkbar">SCBA &amp; spare bottles &mdash; below 4200 PSI swap out bottle</div>
+  <div id="scba"></div>
+  <div class="scba-note">SCBA/Mask IDs &amp; hydro dates: see individual SCBA record sheets. After use: change cylinder and clean/sanitize.</div>
+
+  <div class="darkbar">Equipment (continued)</div>
+  <div id="equipmentB"></div>
+
+  <div class="darkbar">Additional Equipment</div>
+  <div id="addl"></div>
+
+  <div class="darkbar">Weekly Reminders</div>
+  <div class="rem">
+    <label class="chk"><input type="checkbox" data-k="rem_tuesun"><span><b>TUE &amp; SUN &mdash;</b> Chainsaws &amp; pole saw: idle and check brake</span></label>
+    <label class="chk"><input type="checkbox" data-k="rem_sat"><span><b>SAT &mdash;</b> Sawzall / Milwaukee batteries charged</span></label>
+    <label class="chk"><input type="checkbox" data-k="rem_sun"><span><b>SUN &mdash;</b> Honda pump: started and ran</span></label>
+    <label class="chk"><input type="checkbox" data-k="rem_gastic"><span><b>WEEKLY &mdash;</b> TIC &amp; Altair 4XR: battery charge check</span></label>
+  </div>
+
+  <div id="altairLog">
+    <div class="gasbar"><span>Altair 4XR Log</span><span class="fnote" id="logDue"></span></div>
+    <p class="log-when"><b>MONTHLY &mdash;</b> Zero, Span Calibration &amp; Bump Test (log below). <b>WEEKLY &mdash;</b> battery charge check (reminder above). Instructions on the <b>Altair 4XR</b> tab.</p>
+    <div class="log-form">
+      <div class="log-grid">
+        <label>Date<input type="date" id="lg_date"></label>
+        <label>Initials<input type="text" id="lg_init" maxlength="6" autocomplete="off"></label>
+        <label>Result<select id="lg_result"><option>PASS</option><option>FAIL</option></select></label>
+      </div>
+      <div class="checks">
+        <label class="chk"><input type="checkbox" id="lg_charged"><span>Charged</span></label>
+        <label class="chk"><input type="checkbox" id="lg_zero"><span>Zero</span></label>
+        <label class="chk"><input type="checkbox" id="lg_span"><span>Span cal</span></label>
+        <label class="chk"><input type="checkbox" id="lg_bump"><span>Bump</span></label>
+      </div>
+      <label class="log-notes">Notes<input type="text" id="lg_notes" autocomplete="off" placeholder="Sensor issues, cal gas lot, tagged out, etc."></label>
+      <button id="lg_add" type="button">Add log entry</button>
+    </div>
+    <div id="logEntries"></div>
+  </div>
+
+  <div class="darkbar">Notes</div>
+  <div class="notesbox"><textarea data-k="notes" rows="4" placeholder="Anything the next shift should know"></textarea></div>
+
+  <p class="savehint">To file the completed sheet: tap <b>Save as PDF</b>, Share &rarr; <b>Save to Files</b> &rarr; E4454 Daily Equipment Checkout folder. Then open <b>Teams</b> and upload the PDF to the checkout channel's Files tab.</p>
+  <p class="draftnote" id="draftnote"></p>
+
+  <div class="backup noprint">
+    <b>App data on this iPad</b>
+    <span>Logs, initials, inventory checks and drafts are stored only on this iPad. Back up monthly (after filing the EMS-711-2) and keep the file in Teams.</span>
+    <div class="stale-btns">
+      <button type="button" id="bkSave">Back up app data</button>
+      <button type="button" id="bkLoad">Restore from backup</button>
+      <input type="file" id="bkFile" accept=".json,application/json" hidden>
+    </div>
+    <span class="bkinfo" id="bkInfo"></span>
+  </div>
+  </div>
+
+  <div id="e-inv">
+    <div class="inv-tools">
+      <input type="search" id="invSearch" placeholder="Search items (e.g. hydrant wrench)" autocomplete="off">
+      <button id="invReset" type="button">Reset checks</button>
+    </div>
+    <div id="compartments"></div>
+    <p class="inv-foot">Tap a compartment to open it. Tap a photo to view it full screen. Checks are saved on this iPad until reset.</p>
+  </div>
+
+</div>
+</div>
+
+<div id="view-gas">
+<div class="wrap">
+  <div class="redbar">MSA Altair 4XR &mdash; Monthly Maintenance</div>
+
+  <div class="gas-note">
+    <b class="hd">Equipment &amp; Cal Gas</b>
+    <ul>
+      <li>4-gas calibration cylinder &mdash; <b>1.45% CH4 (60% LEL)</b> &middot; <b>15.0% O2</b> &middot; <b>60 ppm CO</b> &middot; <b>20 ppm H2S</b></li>
+      <li>0.25 L/min fixed-flow regulator &middot; Calibration cap + tubing</li>
+      <li>Verify cylinder is <b>not expired</b> and screen gas values match the <b>cylinder label</b> before flowing gas.</li>
+      <li>Perform all tests in <b>clean, fresh air</b> &mdash; away from apparatus exhaust and fuel vapors.</li>
+    </ul>
+  </div>
+
+  <div class="gasbar"><span>1. Zero (Fresh Air Setup)</span><span class="fnote">E4454: Monthly &middot; Clean air only</span></div>
+  <ol class="gas-steps">
+    <li>Turn unit ON (hold <b>center button</b>) in fresh air. Allow self-check to finish and readings to stabilize (O2 20.8%, others at 0). Checkmark indicates completion.</li>
+    <li><b>Press and hold the &#9650; (up) button for 3 seconds.</b></li>
+    <li>Screen shows <b>ZERO CAL?</b> &mdash; press the <b>center (OK) button</b> to confirm.</li>
+    <li>Unit zeros CO / H2S / LEL and sets O2 to fresh-air baseline. Keep it in clean air and don't breathe on the sensors.</li>
+    <li>When zero completes, the unit prompts <b>SPAN CAL?</b> &mdash; continue to Section 2 to calibrate, or let it time out to return to normal operation.</li>
+  </ol>
+
+  <div class="gasbar"><span>2. Span Calibration</span><span class="fnote">E4454: Monthly &middot; After zero / failed bump</span></div>
+  <ol class="gas-steps">
+    <li>From the <b>SPAN CAL?</b> prompt (follows a completed zero), press the <b>center (OK) button</b> to confirm.</li>
+    <li>Attach the calibration cap, connect tubing to the regulator, and <b>open the valve</b> to flow gas.</li>
+    <li>Unit runs span automatically (about 1&ndash;2 minutes). Leave gas flowing until it reports the result.</li>
+    <li>When complete, <b>close the regulator valve</b> and remove the calibration cap.</li>
+    <li>Sensors that <b>fail</b> span are left unchanged &mdash; the unit will flag them. A unit with a failed sensor is <b>out of service</b>: tag it and report it.</li>
+  </ol>
+
+  <div class="gasbar"><span>3. Bump Test</span><span class="fnote">E4454: Monthly</span></div>
+  <ol class="gas-steps">
+    <li>With the unit ON and readings stable in fresh air, press the <b>&#9660; (down) button</b>. Screen shows <b>BUMP TEST?</b></li>
+    <li>Press the <b>center (OK) button</b> to confirm.</li>
+    <li>Attach calibration cap to the unit, connect tubing, and <b>open the regulator</b> to flow gas.</li>
+    <li>Wait for the unit to complete the test. <b>PASS:</b> a &#10003; checkmark displays in measure mode for 24 hours.</li>
+    <li><b>Close the regulator valve</b> and remove the calibration cap. Readings return to normal.</li>
+    <li><b>FAIL:</b> do NOT use the unit &mdash; perform a full zero + span calibration (Sections 1&ndash;2), then re-bump. If it still fails, tag it out.</li>
+  </ol>
+
+  <div class="gas-note warm">
+    <b class="hd">E4454 Schedule &amp; Pass Criteria</b>
+    <ul>
+      <li><b>Zero, span calibration, and bump test: once a month</b> &mdash; and any time the unit takes a hard hit or heavy smoke exposure.</li>
+      <li><b>Span calibrate</b> immediately after any failed bump test.</li>
+      <li>Combustible sensor accuracy must read <b>0 to +20% of applied gas</b> &mdash; outside that range, calibrate before use.</li>
+      <li><b>Clear the peak readings after each use</b> so the next crew starts with a clean slate.</li>
+      <li>Manufacturer's recommendation is a bump test before each day's use &mdash; follow current department SOP if it differs.</li>
+    </ul>
+  </div>
+
+  <p class="inv-foot">Monthly log entries are recorded on the <b>Engine 4454 Checkout</b> tab, below Weekly Reminders.</p>
+
+  <div class="gasbar"><span>Troubleshooting &mdash; Problem &rarr; Action</span><span class="fnote">If it can't pass a test, it doesn't ride</span></div>
+  <div class="trow"><b>Fails ZERO</b><span>Move to truly clean air &mdash; no exhaust, fuel vapors, or smoke &mdash; and retry. Don't breathe on the sensors. If it still fails, run a full span calibration; repeated zero failures mean a drifting or exhausted sensor.</span></div>
+  <div class="trow"><b>Fails SPAN CAL</b><span>Check cylinder expiration date and pressure. Verify the regulator is the 0.25 L/min fixed-flow type, tubing isn't cracked or kinked, and the cal cap is fully seated on the case. Retry with known-good gas; if a sensor still fails, tag the unit out.</span></div>
+  <div class="trow"><b>Fails BUMP</b><span>Recalibrate (zero + span), then re-bump. A bump failure right after a good calibration means the sensor can't respond &mdash; replace that sensor or send the unit for service.</span></div>
+  <div class="trow"><b>Slow or weak response</b><span>Inspect sensor inlets and dust/water filters for dirt, soot, or moisture blockage &mdash; common after fire assignments. Wipe the housing with a damp cloth only: no solvents, no compressed air into the sensor ports.</span></div>
+  <div class="trow"><b>O2 off in fresh air</b><span>Fresh air should read 20.8%. If it doesn't, zero the unit in clean air. Persistent drift means an aging O2 sensor &mdash; expect to replace it. O2 sensors wear out from normal use even when the unit sits on the charger.</span></div>
+  <div class="trow"><b>LEL reads low or erratic</b><span>Combustible sensor may be poisoned (silicones, sulfur compounds, leaded fuel) or desensitized after heavy exposure. Bump immediately after any suspected exposure; calibrate or replace the sensor if it can't pass.</span></div>
+  <div class="trow"><b>Won't power on / short runtime</b><span>Charge fully and retry. Cold weather cuts runtime noticeably &mdash; keep the unit warm in winter and off the apparatus floor. If it won't hold a charge, battery service is required.</span></div>
+  <div class="trow"><b>SENSOR ERROR / missing sensor</b><span>Cycle power once. If the error returns, the unit can't read that sensor &mdash; out of service, tag and report. Don't run a 4-gas with a dead channel.</span></div>
+  <div class="trow"><b>False alarms in cab / on scene</b><span>Diesel exhaust, fueling operations, and cleaning products can legitimately trip CO or LEL. Confirm in fresh air before writing the unit off as faulty &mdash; if readings clear in clean air, the detector did its job.</span></div>
+  <div class="trow"><b>Alarms won't clear</b><span>Move to fresh air and give the sensors time to purge &mdash; high exposures take longer to clear. If readings show zero but the alarm persists, cycle power. STEL/TWA alarms reflect accumulated exposure and reset on restart.</span></div>
+
+  <div class="gas-note warm">
+    <b class="hd">Prevention &mdash; Keep It Off This Sheet</b>
+    <ul>
+      <li>Keep the unit <b>on the charger</b> between shifts &mdash; the weekly charge check catches a dead battery before a call does.</li>
+      <li><b>Sensors are consumables.</b> They wear out with age and exposure &mdash; frequent cal failures mean replacement time.</li>
+      <li>After heavy smoke or a dusty assignment, <b>check the filters</b> and run a bump even if one isn't due.</li>
+      <li>Never clean with <b>solvents or silicone-based products</b> &mdash; they poison the LEL sensor. Damp cloth only.</li>
+    </ul>
+  </div>
+
+  <p class="gas-foot">E4454 &middot; Skull Creek Station &middot; TCU Battalion 4&ensp;|&ensp;Reference only &mdash; consult MSA ALTAIR 4XR operating manual and department SOPs. Unit and charging cables are stored under the passenger seat; TIC charging cable is in the same kit.</p>
+</div>
+</div>
+
+<div id="view-aed">
+<div class="wrap">
+  <div class="topline"><span>CAL FIRE &bull; ENGINE 4454</span><span>SKULL CREEK FOREST FIRE STATION</span></div>
+  <div class="redbar">AED &mdash; EMS-711-2 Inspection Report</div>
+
+  <div class="gas-note">
+    <b class="hd">Electronic EMS-711-2 (Rev. 12/22)</b>
+    <ul>
+      <li><b>Daily:</b> check the inventory, then fill in today's row below and <b>initial with your finger</b>. Printed name + initials = the "Inspected By" column.</li>
+      <li><b>Monthly:</b> at the end of the month, complete the monthly check (side 2) and sign it the same way.</li>
+      <li>Any <b>NO</b> or missing item &rarr; note it in Comments/Remarks and notify the Unit/Program EMS Coordinator for repair or replacement.</li>
+      <li>At month end, tap <b>Save EMS-711-2 as PDF</b> and file it like the checkout sheets. Keep it for <b>two years</b>.</li>
+    </ul>
+  </div>
+
+  <!-- ===== SIDE 1: DAILY ===== -->
+  <div class="gasbar"><span>Side 1 &mdash; Daily Inspection</span><span class="fnote" id="f7Today"></span></div>
+  <div class="log-form">
+    <div class="f7hdr">
+      <label>Month<input type="month" id="f7_month"></label>
+      <label>Assigned location (unit &amp; station)<input type="text" id="f7_loc" data-h="loc" autocomplete="off"></label>
+      <label>AED make / model / serial #<input type="text" id="f7_aed" data-h="aed" autocomplete="off"></label>
+      <label>Equipment<input type="text" id="f7_equip" data-h="equip" autocomplete="off"></label>
+      <label>Radio no.<input type="text" id="f7_radio" data-h="radio" autocomplete="off"></label>
+    </div>
+
+    <div class="aed-sec">Initial a day</div>
+    <div class="log-grid">
+      <label>Date<input type="date" id="f7_date"></label>
+      <label>Inventory complete?<select id="f7_inv"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></label>
+      <label>AED used on patient &mdash; Incident #<input type="text" id="f7_inc" autocomplete="off" placeholder="e.g. CA-TCU-004321"></label>
+    </div>
+    <label class="log-notes">Comments<input type="text" id="f7_comm" autocomplete="off" placeholder="Missing/replaced items, important info"></label>
+    <label class="log-notes">Inspected by &mdash; printed name<input type="text" id="f7_name" list="f7names" autocomplete="off"></label>
+    <datalist id="f7names"></datalist>
+    <div class="padlab">Initials <button type="button" class="padclear" data-pad="f7">Clear</button></div>
+    <canvas class="sigpad" id="f7_pad"></canvas>
+    <button id="f7_save" class="bigbtn" type="button">Initial &amp; save</button>
+  </div>
+  <div class="t7wrap"><table class="t7" id="f7Table"></table></div>
+  <button id="f7_pdf" class="bigbtn dark" type="button">Save EMS-711-2 as PDF</button>
+
+  <!-- ===== SIDE 2: MONTHLY ===== -->
+  <div class="gasbar"><span>Current AED Expirations</span><span class="fnote" id="aedCurFrom"></span></div>
+  <div class="aed-cur" id="aedCurrent"></div>
+
+  <div class="gasbar"><span>Side 2 &mdash; Monthly Inspection</span><span class="fnote" id="aedDue"></span></div>
+  <div class="log-form">
+    <div class="log-grid">
+      <label>Date<input type="date" id="ag_date"></label>
+      <label>AED Serial #<input type="text" id="ag_serial" autocomplete="off"></label>
+    </div>
+
+    <div class="aed-sec">1. AED</div>
+    <div class="yn"><span>Status indicator visible and operable</span><select id="ag_status"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
+    <div class="yn"><span>Clean and no damage noted</span><select id="ag_clean"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
+
+    <div class="aed-sec">2. Inventory</div>
+    <div class="yn"><span>Two sets of adult pads</span><select id="ag_adult"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
+    <div class="expgrid">
+      <label>Adult pads #1 exp<input type="month" id="ag_ap1"></label>
+      <label>Adult pads #2 exp<input type="month" id="ag_ap2"></label>
+    </div>
+    <div class="yn"><span>Two sets of pediatric pads</span><select id="ag_pedi"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
+    <div class="expgrid">
+      <label>Pedi pads #1 exp<input type="month" id="ag_pp1"></label>
+      <label>Pedi pads #2 exp<input type="month" id="ag_pp2"></label>
+    </div>
+    <div class="yn"><span>Scissors &amp; razor</span><select id="ag_scissors"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
+    <div class="yn"><span>Two AED use forms (EMS-713)</span><select id="ag_forms"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
+    <div class="expgrid">
+      <label>AED battery exp<input type="month" id="ag_bat"></label>
+      <label>Backup AED battery exp<input type="month" id="ag_bat2"></label>
+    </div>
+
+    <div class="aed-sec">3. Other</div>
+    <label class="log-notes">Other<input type="text" id="ag_other" autocomplete="off"></label>
+    <div class="aed-sec">4. Inspected by</div>
+    <label class="log-notes">Printed name<input type="text" id="ag_name" list="f7names" autocomplete="off"></label>
+    <div class="padlab">Initials <button type="button" class="padclear" data-pad="ag">Clear</button></div>
+    <canvas class="sigpad" id="ag_pad"></canvas>
+    <div class="aed-sec">5. Remarks</div>
+    <label class="log-notes">Remarks<input type="text" id="ag_notes" autocomplete="off" placeholder="Missing/replaced items, EMS Coordinator notified, etc."></label>
+    <button id="ag_add" class="bigbtn" type="button">Initial &amp; save monthly inspection</button>
+  </div>
+  <div id="aedEntries"></div>
+
+  <p class="gas-foot">E4454 &middot; Skull Creek Station &middot; TCU Battalion 4&ensp;|&ensp;Header fields, serial # and expiration dates carry forward &mdash; confirm or update them each month. Records are saved on this iPad; the monthly PDF is the filed copy.</p>
+</div>
+</div>
+
+<!-- printable EMS-711-2 (filled in at print time) -->
+<div id="f711print"></div>
+
+<div id="view-util">
+<div class="wrap">
+  <div class="topline"><span>CAL FIRE &bull; UTILITY 4454</span><span>SKULL CREEK FOREST FIRE STATION</span></div>
+  <div class="redbar">Utility 4454 Weekly Checkout</div>
+
+  <div class="subtabs">
+    <button id="usub-sheet" class="active" type="button">Checkout Sheet</button>
+    <button id="usub-inv" type="button">Compartment Inventory</button>
+  </div>
+
+  <div id="u-sheet">
+    <p class="udue" id="uDue"></p>
+    <div class="stale" id="uStale" hidden></div>
+    <div class="meta">
+      <div class="f-date">
+        <label for="u_date">Date</label>
+        <input type="date" id="u_date" data-u="date">
+      </div>
+      <div>
+        <label for="u_by">Checked by</label>
+        <input type="text" id="u_by" data-u="by" autocomplete="off">
+      </div>
+      <div>
+        <label for="u_init">Initials</label>
+        <input type="text" id="u_init" data-u="init" autocomplete="off" maxlength="6">
+      </div>
+    </div>
+
+    <div class="expsum" id="expSumU"></div>
+
+    <div class="darkbar">Vehicle</div>
+    <div id="uVehicle"></div>
+
+    <div class="darkbar">Equipment</div>
+    <div id="uEquipment"></div>
+
+    <div class="darkbar">Additional Equipment</div>
+    <div id="uAddl"></div>
+
+    <div class="darkbar">Notes</div>
+    <div class="notesbox"><textarea data-u="notes" rows="4" placeholder="Anything the next shift should know"></textarea></div>
+
+    <p class="savehint">To file the completed sheet: tap <b>Save as PDF</b>, Share &rarr; <b>Save to Files</b> &rarr; Utility 4454 Checkout folder. Then open <b>Teams</b> and upload the PDF to the checkout channel's Files tab.</p>
+    <p class="draftnote" id="udraftnote"></p>
+  </div>
+
+  <div id="u-inv">
+    <div class="inv-tools">
+      <input type="search" id="uInvSearch" placeholder="Search utility items (e.g. tourniquet)" autocomplete="off">
+      <button id="uInvReset" type="button">Reset checks</button>
+    </div>
+    <div id="uCompartments"></div>
+    <p class="inv-foot">Tap a compartment to open it. Tap a photo to view it full screen. Checks are saved on this iPad until reset.</p>
+  </div>
+</div>
+</div>
+
+<div id="lightbox"><img alt=""></div>
+
+<div class="actions">
+  <button id="savePdf" type="button">Save as PDF</button>
+  <button id="clearForm" type="button">Clear form</button>
+</div>
+
+<script>
+
+"use strict";
+// Photo fallback: photos normally live in img/. If a deploy puts them at the site root instead,
+// retry the same file name from the root once, so photos load either way.
+document.addEventListener("error", e => {
+  const t = e.target;
+  if (!t || t.tagName !== "IMG" || t.dataset.fb) return;
+  const src = t.getAttribute("src") || "";
+  if (/^img\//.test(src)) { t.dataset.fb = "1"; t.src = src.replace(/^img\//, ""); }
+}, true);
+// ---------- form definition (mirrors the paper sheet) ----------
+const EQUIPMENT_A = [
+  { id:"radios", name:"Radios", sub:"HT: BK Alpha \u2022 Bravo \u2022 Kam (BKR5000) \u2014 Mobile: BK M150 in cab",
+    checks:["Present","Charged","Clean","Mobile radio (BK M150)"],
+    spares:["Rechargeable battery 1","Rechargeable battery 2","Clam shell 1","Clam shell 2"] },
+  { id:"tablets", name:"iPad & Tablet Command", sub:"iPad Pro 11\"",
+    checks:["iPad charged","iPad mounted","TC tablet charged","Crew logged into EPCR"] },
+  { id:"kestrel", name:"Kestrel weather meter", sub:"Belt weather kit \u2014 under passenger seat",
+    checks:["Present","Battery good"] },
+  { id:"coolcan", name:"Cool can & ice chest", sub:"Water replaced / re-iced every 3 days",
+    checks:["Cool can clean & iced","Ice chest iced & restocked"] },
+  { id:"holmatro", name:"Holmatro PCT 60",
+    checks:["Battery charged","Blades","Runs"] },
+];
+const EQUIPMENT_B = [
+  { id:"aed", name:"AED", sub:"Passenger medical compartment • Per EMS-711-2: 2 adult pads, 2 pedi pads, scissors & razor, 2 EMS-713 forms • Initial the electronic EMS-711-2 on the AED tab",
+    checks:["Status indicator visible & operable","Clean, no damage","Inventory present"],
+    field:{ key:"incident", label:"Used on patient — Incident #:" } },
+  { id:"medbag", name:"Medical bag",
+    checks:["O2 bottle present","Glucometer batteries","SpO2 batteries","Pen light batteries","Thermometer batteries (spine kit)"], field:{ key:"psi", label:"O2 PSI:" } },
+  { id:"esuction", name:"Electric suction", sub:"Battery suction \u2014 passenger medical compartment",
+    checks:["Charged","Powers on & pulls suction","Canister & tubing clean"] },
+  { id:"milwaukee", name:"Milwaukee saws & hand light", sub:"Circular saw \u2022 Sawzall \u2022 Hand light",
+    checks:["Blades","Sharp","Batteries","Clean","Runs"] },
+  { id:"mark3", name:"Mark 3 pump", sub:"WATERAX \u2014 pump pack & hoses shared with Honda",
+    checks:["Clean","Pump pack","Hoses","Fuel","Ran"] },
+  { id:"honda", name:"Honda pump", sub:"Mini-Striker",
+    checks:["Clean","Fuel","Ran"], field:{ key:"started", label:"Started/Used date:" } },
+  { id:"driptorch", name:"Drip torches",
+    checks:["Drip torches","Full","Wicks","Fusees"] },
+  { id:"ladder", name:"Ladder", sub:"20ft \u2014 top middle compartment",
+    checks:["Clean","Thrown"] },
+  { id:"firingbag", name:"Firing bag", sub:"Right hose bed",
+    checks:["Inventory","Firing pistol"] },
+  { id:"chainsaws", name:"Chainsaws", sub:"372XP \u2022 365 \u2022 T435",
+    checks:["Chain","Saw pack","Clean","Fuel/Oil"] },
+  { id:"polesaw", name:"Pole saw", sub:"Stihl KM90R",
+    checks:["Chain","Extension","Clean","Fuel/Oil"] },
+];
+const SCBA_CHECKS = ["Clean","ICM batt","HUD batt","Regulator","Bypass","Harness/straps","Spare cyl"];
+const SCBA_UNITS = ["ALPHA","BRAVO","CHARLIE","DELTA"];
+const DRAFT_KEY = "e4454_daily_checkout_v1";
+
+// ================= PERISHABLE MED SUPPLIES — expiration dates =================
+// Source: SKL_PERISHABLE_MED_SUPPLIES spreadsheet + crew updates (Oct 2026). UPDATE DATES HERE when items are replaced.
+// veh: E = Engine 4454, U = Utility 4454.
+// tag: "<list>|<item name>" puts a date tag on that inventory row. id: used by the utility lists.
+const PERISHABLES = [
+  { veh:"E", kit:"Medical bag",          item:"Adult Epi 0.3mg",          qty:1, exp:"2027-04", tag:"medbag|0.3mg Adult Epi" },
+  { veh:"E", kit:"Medical bag",          item:"Adult Epi 0.3mg",          qty:1, exp:"2027-07", tag:"medbag|0.3mg Adult Epi" },
+  { veh:"E", kit:"Medical bag",          item:"Pedi Epi 0.15mg",          qty:1, exp:"2027-09", tag:"medbag|0.15mg Pedi Epi" },
+  { veh:"E", kit:"Medical bag",          item:"Pedi Epi 0.15mg",          qty:1, exp:"2027-03", tag:"medbag|0.15mg Pedi Epi" },
+  { veh:"E", kit:"Medical bag",          item:"Oral glucose 15g",         qty:2, exp:"2027-10", tag:"medbag|15g Oral Glucose" },
+  { veh:"E", kit:"Medical bag",          item:"Eye wash (Eye Clean 4 oz)",qty:1, exp:"2028-05", tag:"medbag|Eye Wash (Eye Clean 4 fl oz)" },
+  { veh:"E", kit:"Medical bag",          item:"Aspirin (bottle)",         qty:1, exp:"2028-08", tag:"medbag|Aspirin (bottle)" },
+  { veh:"E", kit:"Medical bag",          item:"Narcan 4mg nasal",         qty:4, exp:"2028-09", tag:"medbag|4mg Nasal Narcan" },
+  { veh:"E", kit:"Burn kit",             item:"Eye wash (Eye Clean 4 oz)",qty:2, exp:"2028-05", tag:"kit_burn|Eye Clean Solution" },
+  { veh:"E", kit:"Burn kit",             item:"Sterile water 1000 mL",    qty:2, exp:"2028-12", tag:"kit_burn|1000 mL Sterile Solution" },
+  { veh:"E", kit:"Spine kit",            item:"Sterile water 1000 mL",    qty:1, exp:"2028-07", tag:"kit_spine|1000 mL Sterile Solution" },
+  { veh:"E", kit:"Med line pack (cab)",  item:"Adult Epi",                qty:1, exp:"2027-04", tag:"cab|Medical line pack" },
+  { veh:"E", kit:"Med line pack (cab)",  item:"Oral glucose",             qty:1, exp:"2027-10", tag:"cab|Medical line pack" },
+  { veh:"U", kit:"Medical line pack",    item:"Adult EpiPen 0.3mg",       qty:1, exp:"2027-06", id:"epi" },
+  { veh:"U", kit:"Medical pack",         item:"Adult EpiPen",             qty:1, exp:"2027-07", id:"mpAdultEpi" },
+  { veh:"U", kit:"Medical pack",         item:"Pedi EpiPen",              qty:1, exp:"2027-03", id:"mpPediEpi" },
+  { veh:"U", kit:"Medical pack",         item:"Sterile water 250 mL",     qty:2, exp:"2028-10", id:"mpWater" },
+  { veh:"U", kit:"Medical pack",         item:"Eye wash",                 qty:1, exp:"2028-10", id:"mpEyeWash" },
+  { veh:"U", kit:"Burn kit",             item:"Sterile water 1000 mL",    qty:2, exp:"2028-07", id:"uBurnWater" },
+  { veh:"U", kit:"Burn kit",             item:"Eye wash bottle",          qty:1, exp:"2028-10", tag:"driver_bed_lid/burnkit|Eye wash bottle" },
+  { veh:"U", kit:"Burn kit",             item:"Eye wash bottle",          qty:1, exp:"2029-02", tag:"driver_bed_lid/burnkit|Eye wash bottle" },
+  { veh:"U", kit:"Medical pack",         item:"Oral glucose gel",         qty:1, exp:"2028-03", tag:"pass_bed_lid/medpack|Oral glucose gel (strawberry)" }
+];
+// earliest expiration on an inventory row -> colored tag (green / orange within 60 days / red expired)
+function tagFor(key){
+  const hits = [...new Set(PERISHABLES.filter(p => p.tag === key).map(p => p.exp))].sort();
+  if (!hits.length) return "";
+  const one = ym => { const s = expStatus(ym); return `<span class="exp ${s}">${s === "expired" ? "EXPIRED " : "Exp "}${expLabel(ym)}</span>`; };
+  return hits.length === 1 ? one(hits[0]) : `<span class="expwrap">${hits.map(one).join("")}</span>`;
+}
+
+// ---------- render ----------
+function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstChild; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+function renderEquipment(list, rootId){
+  const root = document.getElementById(rootId);
+  list.forEach(eq => {
+    const checks = eq.checks.map((c,i) =>
+      `<label class="chk"><input type="checkbox" data-k="${eq.id}_c${i}"><span>${esc(c)}</span></label>`).join("");
+    const spares = eq.spares ? `<div class="checks">` + eq.spares.map((s,i) =>
+      `<label class="chk"><input type="checkbox" data-k="${eq.id}_s${i}"><span>Spare: ${esc(s)}</span></label>`).join("") + `</div>` : "";
+    const field = eq.field ? `<div class="inline-field"><b>${esc(eq.field.label)}</b>
+        <input type="text" data-k="${eq.id}_${eq.field.key}" autocomplete="off"></div>` : "";
+    root.appendChild(el(`<div class="eq">
+      <div class="name">${esc(eq.name)}</div>
+      ${eq.sub ? `<div class="sub">${esc(eq.sub)}</div>` : ""}
+      <div class="checks">${checks}</div>
+      ${spares}${field}
+      <div class="comment"><input type="text" data-k="${eq.id}_comment" placeholder="Comments" autocomplete="off"></div>
+    </div>`));
+  });
+}
+renderEquipment(EQUIPMENT_A, "equipmentA");
+renderEquipment(EQUIPMENT_B, "equipmentB");
+// live EMS-711-2 status on the engine AED line (text filled in by f7Status)
+(() => { const aedRow = document.querySelector('#equipmentB [data-k="aed_c0"]').closest(".eq");
+  const st = el(`<div class="f7stat" id="f7Stat"></div>`);
+  aedRow.insertBefore(st, aedRow.querySelector(".comment"));
+  st.addEventListener("click", () => document.getElementById("tab-aed").click()); })();
+
+const scbaRoot = document.getElementById("scba");
+SCBA_UNITS.forEach(u => {
+  const id = "scba_" + u.toLowerCase();
+  const checks = SCBA_CHECKS.map((c,i) =>
+    `<label class="chk"><input type="checkbox" data-k="${id}_c${i}"><span>${esc(c)}</span></label>`).join("");
+  scbaRoot.appendChild(el(`<div class="scba">
+    <div class="name"><span>${u}</span>
+      <span class="psi">PSI <input type="text" inputmode="numeric" data-k="${id}_psi" autocomplete="off"></span></div>
+    <div class="checks">${checks}</div>
+    <div class="init">Initials <input type="text" data-k="${id}_init" maxlength="6" autocomplete="off"></div>
+  </div>`));
+});
+
+const addlRoot = document.getElementById("addl");
+for (let i = 1; i <= 2; i++) {
+  addlRoot.appendChild(el(`<div class="addl">
+    <input type="text" data-k="addl${i}_name" placeholder="Equipment" autocomplete="off">
+    <input type="text" data-k="addl${i}_notes" placeholder="Checks / comments" autocomplete="off">
+  </div>`));
+}
+
+// ---------- draft save/restore ----------
+const inputs = () => document.querySelectorAll("[data-k]");
+function saveDraft(){
+  const d = {};
+  inputs().forEach(i => { d[i.dataset.k] = i.type === "checkbox" ? i.checked : i.value; });
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch(e){}
+  const n = document.getElementById("draftnote");
+  n.textContent = "Draft saved on this iPad " + new Date().toLocaleTimeString();
+}
+function loadDraft(){
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch(e){}
+  if (!d) return;
+  inputs().forEach(i => {
+    if (!(i.dataset.k in d)) return;
+    if (i.type === "checkbox") i.checked = !!d[i.dataset.k];
+    else i.value = d[i.dataset.k];
+  });
+}
+document.addEventListener("input", e => { if (e.target.dataset && e.target.dataset.k) { saveDraft(); if (e.target.dataset.k === "date") setTitle(); } });
+document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.k) saveDraft(); });
+
+// ---------- title -> default PDF filename ----------
+function setTitle(){
+  const d = document.getElementById("f_date").value || localToday();
+  document.title = "E4454_Checkout_" + d;
+}
+
+// ---------- actions (shared by engine and utility checkout sheets) ----------
+document.getElementById("savePdf").addEventListener("click", () => {
+  document.body.classList.remove("print711");
+  if (document.body.classList.contains("util")) { setUTitle(); markUDone(); } else setTitle();
+  window.print();
+});
+function resetEngineForm(){
+  inputs().forEach(i => { if (i.type === "checkbox") i.checked = false; else i.value = ""; });
+  try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
+  document.getElementById("f_date").value = localToday();
+  document.getElementById("draftnote").textContent = "";
+  setTitle(); checkStale();
+}
+document.getElementById("clearForm").addEventListener("click", () => {
+  if (document.body.classList.contains("util")) { clearUForm(); return; }
+  if (!confirm("Clear the whole form? This removes the saved draft on this iPad.")) return;
+  resetEngineForm();
+});
+// A draft left over from an earlier day must not be saved as today's checkout.
+function staleBanner(boxId, dateId, what, onFresh){
+  const box = document.getElementById(boxId), d = document.getElementById(dateId).value;
+  if (!d || d >= localToday()) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<b>\u26a0 This ${what} is still filled in from ${logFmtDate(d)}.</b>
+    <span>Start a new one for today, or keep editing the old one.</span>
+    <div class="stale-btns"><button type="button" class="fresh">Start today's checkout</button><button type="button" class="keep">Keep old draft</button></div>`;
+  box.querySelector(".fresh").onclick = onFresh;
+  box.querySelector(".keep").onclick = () => { box.hidden = true; };
+}
+function checkStale(){
+  staleBanner("eStale", "f_date", "engine checkout", resetEngineForm);
+  if (typeof resetUForm === "function") staleBanner("uStale", "u_date", "utility checkout", resetUForm);
+}
+
+// ---------- init ----------
+loadDraft();
+if (!document.getElementById("f_date").value)
+  document.getElementById("f_date").value = localToday();
+setTitle();
+
+// ================= inventory =================
+const COMPARTMENTS = [{"id":"front_bumper","name":"Front Bumper","items":[[1,"100ft 1 3/4\" + KK thunder nozzle selectable gal."],[1,"25ft 1 1/2\" mobile line + 1 1/2\" bale + 1 1/2\" HEN Blade 45-t nozzle"],[1,"20ft 1 1/2\" Fill line"],[1,"15ft 3\" Fill line"],[1,"20ft Tow chain"],[2,"8\" Bolt cutters"],[1,"Fence cutters"],[1,"First out roll + 1 1/2\" bale + 3/8\" tip"],[1,"Foldable bolt cutters"],[2,"Spare starter mobile line"]],"photos":[{"f":"IMG_9306.jpg"},{"f":"IMG_9305.jpg"},{"f":"IMG_9307.jpg"}]},{"id":"cab","name":"Cab","items":[[5,"AA batteries boxes"],[5,"AAA batteries"],[1,"Air hose"],[3,"Bag of medical gloves"],[1,"Belt weather kit"],[1,"Binoculars"],[1,"Checkout binder"],[4,"Clam shells"],[1,"Cleancide wipes"],[1,"Cleaning supply crate + Toiletries"],[1,"Empty packsack"],[1,"Fire extinguisher"],[1,"Fire operations hand book"],[6,"Flagging"],[1,"Flashlight"],[1,"Garmin GPS"],[1,"Gravity sock"],[3,"Highway warning triangle kit"],[1,"Holmatro charger"],[1,"Ice chest"],[1,"Ice chest hose"],[1,"iPad + iPad charger"],[1,"Jetboil"],[1,"Kestrel"],[1,"Lock tag out bag"],[1,"Medical line pack"],[1,"Milwaukee blower"],[1,"Noco boost charger"],[1,"Quad map + Slim Jim"],[2,"Reflective vest"],[1,"Skull key rings"],[1,"Statewide radio call plan binder"],[1,"Water hose"],[1,"Wipes"],[1,"WUI bag"],[1,"7000 Manual"]],"note":"Includes storage underneath the driver's seat, passenger's seat, and backseat.","photos":[{"f":"IMG_9339.jpg"}]},{"id":"dog_house","name":"Dog House","items":[[14,"Arnold detailed maps"],[1,"Binder Calaveras county zone haven/Evac zones"],[1,"Binder statewide radio channel plan"],[1,"Calaveras street index"],[1,"CAL FIRE E4454 ABH agreements"],[1,"Case of fuses for the engine"],[1,"Emergency shift ticket booklet"],[1,"ERG"],[1,"Field operations guide ICS 420-1"],[15,"Fire road signs"],[24,"Fireline 315"],[1,"Fireline Handbook"],[25,"Green warrants"],[19,"ICS 201"],[4,"ICS 214"],[2,"Incident performance"],[2,"IPP 2's"],[2,"IPP6"],[4,"LE 66's"],[7,"Meal sign up"],[15,"Mini memos"],[50,"New LE38"],[1,"NWCG fireline handbook appendix B fire behavior"],[2,"Personnel & equipment report"],[2,"Plastic 4x4 sheet"],[1,"Radio user manuals"],[1,"Satellite phone + charger"],[12,"Skull Creek IA maps"],[1,"Stanislaus county road atlas"],[2,"STD 204"],[4,"STD 269"],[6,"STD 270"],[10,"Workers comp doc"]],"photos":[{"f":"IMG_9336.jpg"}]},{"id":"driver_middle","name":"Driver Side Middle Compartment","items":[[1,"32\" Chainsaw bar"],[2,"Chaps + 2 wedges + 1 scrench + tourniquet"],[1,"Dolmar"],[1,"Flat head axe"],[1,"Fiber tape"],[3,"Hand files"],[1,"Husqvarna Saw 365"],[1,"Husqvarna Saw T435"],[1,"Monkey paw"],[1,"Fireman axe"],[2,"Plaski"],[1,"Pole saw + extension"],[1,"Rhino"],[3,"Rogue hoe"],[1,"Saw bag"],[1,"Shovel"],[5,"Wedges (3 12\" and 2 5\")"]],"photos":[{"f":"IMG_9324.jpg"}]},{"id":"crosslay","name":"Lightning Load / Crosslay","items":[[1,"200' 1 1/2\" bail w/ 3/8\" tip"],[1,"200' with Akron 7/8 tip diameter structure hose 1 3/4\""]],"photos":[{"f":"IMG_9340.jpg","c":"Crosslay — passenger side"},{"f":"IMG_9341.jpg","c":"Crosslay — driver side"}]},{"id":"reel","name":"Driver Side Reel Line","items":[[1,"150' Reel line"],[1,"HEN Blade 20-t nozzle + bale"]],"photos":[{"f":"IMG_9327.jpg"}]},{"id":"bp_driver","name":"Driver Side Back Pump","items":[[1,"Back pump, 5 gallons"]],"photos":[{"f":"IMG_9326.jpg"}]},{"id":"bp_pass","name":"Passenger Side Back Pump","items":[[1,"Back pump"]],"photos":[{"f":"IMG_9345.jpg"}]},{"id":"torp_driver","name":"Torpedo Compartment — Driver Side","items":[[2,"Spare SCBA bottle"]],"photos":[{"f":"IMG_9325.jpg"}]},{"id":"torp_pass","name":"Torpedo Compartment — Passenger Side","items":[[2,"Spare SCBA bottle"]],"photos":[{"f":"IMG_9311.jpg"}]},{"id":"captains","name":"Captains Compartment","items":[[1,"Double female 4.5\" to 4\" reducer"],[1,"Double female 4\" to 3\" reducer"],[1,"Holmatro battery"],[2,"Milwaukee battery"],[1,"Milwaukee LED search light"],[1,"Neon vest"],[1,"Scotts pack"],[1,"TIC (thermal imaging camera) — attached to Scotts pack"]],"photos":[{"f":"IMG_9342.jpg"}]},{"id":"bottom_pass","name":"Bottom Passenger Compartment","items":[[1,"Bag of zip ties"],[1,"Bottle jack + lever extension"],[1,"Engine belt"],[2,"Wheel chocks"],[1,"Wiper blade"]],"note":"Crew bunker gear is stored in this compartment.","photos":[{"f":"IMG_9343.jpg"},{"f":"IMG_9344.jpg"}]},{"id":"pass_front","name":"Passenger Front Compartment","items":[[1,"E-tool (Holmatro)"],[10,"Fusees"],[1,"Sledge hammer"]],"photos":[{"f":"IMG_9309.jpg"}]},{"id":"pass_middle","name":"Passenger Middle Compartment","items":[[4,"12\" Sawzall blades"],[1,"6\" Sawzall blade"],[2,"8\" Sawzall blades"],[1,"Bolt cutters"],[1,"Flat head axe (married with the halogen + wedge)"],[1,"Milwaukee battery + Milwaukee battery charger"],[1,"Milwaukee circular saw"],[1,"Overhaul tarp"],[1,"Sawzall"],[3,"Scotts pack with SCBA bottles"]],"photos":[{"f":"IMG_9310.jpg"}]},{"id":"pass_medical","name":"Passenger Medical Compartment","items":[[1,"AED + Shears + Face mask + AED pads + Razor"],[1,"Axle for stokes basket"],[1,"Battery suction"],[1,"Burn kit"],[1,"Carryall tarp"],[1,"Cool can"],[1,"Box of Drip Drop / electrolytes"],[6,"Hockey puck emergency lights"],[2,"Isolation kit"],[1,"Medical bag"],[3,"N95 mask"],[5,"PCR + AED pads"],[1,"Spare oxygen D cylinder"],[1,"Decontamination kit"],[1,"MCI flagging kit"],[1,"Spinal kit"],[2,"Stop/Slow signs"],[2,"Stuffed animals"]],"photos":[{"f":"IMG_9313.jpg"}]},{"id":"right_hose","name":"Right Hose Bed","items":[[1,"200ft 1 3/4\" structure hose with Elkhart nozzle"],[1,"Back board"],[2,"Case of Body Armor"],[2,"Case of bottled waters"],[1,"Firing kit"],[1,"Husqvarna Saw 372"],[1,"Log roller"],[1,"Mop-up kit"],[2,"Snow chains"],[1,"Tool box"],[1,"Water rescue gear bag"],[1,"Wooden hose roller"],[1,"Choker chain + two ratchet straps"],[1,"Coolant container"]],"photos":[{"f":"IMG_9316.jpg","c":"Without OOC bags"},{"f":"IMG_9317.jpg","c":"With OOC bags"},{"f":"IMG_9318.jpg","c":"Front of bed"}]},{"id":"left_hose","name":"Left Hose Bed","items":[[1,"500ft 3\" supply line gated Siamese with hydrant pack"],[1,"Hotel pack + 2 1/2\" gated wye with 100' 1 3/4\" bundle + combi nozzle"],[1,"Stokes basket"],[2,"Water rescue gear bag"],[1,"Choker cable"],[1,"Utility rope"],[12,"MRE's"]],"photos":[{"f":"IMG_9319.jpg","c":"Rear view"},{"f":"IMG_9320.jpg","c":"Top-down view"}]},{"id":"top_middle","name":"Top Middle Compartment","items":[[3,"1/2\" Suction hose with 2\" strainer"],[1,"20ft ladder"],[3,"Hard suction hose with 4\" strainer"],[1,"NY hook"],[1,"Rock bar"],[1,"Rubbish hook"]],"photos":[{"f":"IMG_9346.jpg"}]},{"id":"rear_bottom","name":"Rear Bottom Compartment","items":[[1,"50:1 gas tank"],[2,"Drip torches"],[2,"First out rolls + 1 1/2\" bale + 3/8\" tip"],[1,"Gas can"],[1,"Gated wye"],[1,"Honda pump"],[8,"Hose packs: (2) 1 1/2\" hose & (1) 1\" hose + KK nozzle"],[1,"Combination nozzle"],[1,"Mark 3 carry out bag"],[1,"Mark 3 pump"],[2,"Stokes basket wheels"],[2,"WUI hooks"]],"photos":[{"f":"IMG_9314.jpg"}]},{"id":"brass","name":"Brass Box","items":[[7,"1 1/2\" Bales"],[3,"1 1/2\" DBL female"],[3,"1 1/2\" DBL female"],[1,"1 1/2\" Ejector x1 1 1/2\" cap"],[1,"1 1/2\" Elbow"],[2,"1 1/2\" Gizmos"],[1,"1 1/2\" Strainer"],[7,"1 1/2\" to 1\" reducers"],[2,"1 1/2\" to 2 1/2\" increaser"],[7,"1 1/2\" T's"],[1,"1 1/2\", 1 1/2\" smooth bore tip"],[2,"1 1/2\", 1/2\" smooth bore tip"],[1,"1 1/2\", 5/8 tip"],[1,"1\" 3/16 tip x 1 1\" 1/4 tip"],[2,"1\" Bales"],[1,"1\" Cap"],[2,"1\" DBL female"],[1,"1\" DBL male"],[10,"1\" KK nozzles"],[1,"1\" to 1 1/2\" increaser"],[1,"1\" to 1\" national hose to pipe thread adapter"],[3,"1\" to 3/4\" reducer"],[2,"1\" 1 1/2\" sticks"],[3,"1\", 3/8\" tips"],[2,"2 1/2\" Caps"],[2,"2 1/2\" DBL female"],[1,"2 1/2\" DBL male"],[1,"2 1/2 Thunder fog combi selectable gal. nozzle"],[3,"2 1/2 to 1 1/2 reducer"],[1,"2 1/2\" to 2\" reducer"],[11,"3/4\" Nozzles"],[2,"3/4\" Shutoffs"],[1,"3/4 Wye"],[2,"4\" to 2.5\" reducer"],[2,"50\" 3/4\" sticks"],[1,"Bung wrench"],[1,"Dawn dish soap"],[1,"Foam canister fill hose"],[1,"Hose clamp"],[1,"Hose rubber bag"],[1,"Hydrant wrench"],[3,"KK 1 1/2\" nozzles"],[1,"Mobile line"],[1,"Pipe wrench"],[2,"Pliers"],[1,"Rubber mallet"],[7,"Spanner wrenches"],[1,"1 1/2\", 3/8\" tip"],[1,"1\", 3/8\" tip"]],"photos":[{"f":"IMG_9323.jpg"}]}];
+const INV_KEY = "e4454_inventory_checks_v1";
+
+let invState = {};
+try { invState = JSON.parse(localStorage.getItem(INV_KEY) || "{}"); } catch(e){}
+function invSave(){ try { localStorage.setItem(INV_KEY, JSON.stringify(invState)); } catch(e){} }
+
+const MEDBAG = [
+  { name:"Airway & Breathing", items:[
+    [1,"Manual Suction","Hand-powered suction device used to clear vomit, blood, or secretions from a patient's airway when they can't clear it themselves."],
+    [1,"OPA Kit","Sized oropharyngeal airways — curved plastic devices inserted through the mouth to keep the tongue from blocking the airway in an unconscious patient with no gag reflex."],
+    [1,"NPA Kit","Sized nasopharyngeal airways — soft tubes inserted through the nostril to keep the airway open in patients who still have a gag reflex."],
+    [2,"Adult NRB Mask","Adult non-rebreather mask. Delivers high-concentration oxygen to a breathing patient through a reservoir bag."],
+    [2,"Pedi NRB Mask","Pediatric-sized non-rebreather mask for high-flow oxygen delivery to children."],
+    [2,"Nasal Cannula","Delivers low-flow supplemental oxygen through two small prongs in the nostrils, for patients who don't need or can't tolerate a full mask."],
+    [2,"Pedi Nasal Cannula","Pediatric-sized nasal cannula for low-flow oxygen delivery to children."],
+    [1,"O2 Bottle w/ Regulator","Portable oxygen cylinder with an attached pressure regulator and flowmeter. Supplies the oxygen delivered through the NRB masks and nasal cannulas, with the regulator controlling flow rate in liters per minute."]
+  ]},
+  { name:"Medications", items:[
+    [4,"4mg Nasal Narcan","Intranasal naloxone. Rapidly reverses an opioid overdose by knocking opioids off receptors in the brain and restoring breathing."],
+    [2,"0.3mg Adult Epi","Adult-dose epinephrine auto-injector, used for anaphylaxis to reverse airway swelling and reverse shock from a severe allergic reaction. One of the two was moved from the Utility 4454 medical pack."],
+    [2,"0.15mg Pedi Epi","Pediatric-dose epinephrine auto-injector for treating anaphylaxis in children. One of the two was moved from the Utility 4454 medical pack."],
+    [2,"15g Oral Glucose","Fast-acting glucose gel given by mouth to a conscious patient with suspected hypoglycemia (low blood sugar) who can safely swallow, to quickly raise blood sugar."],
+    [1,"Aspirin (bottle)","Chewable aspirin for suspected cardiac chest pain, given only as authorized by local EMS agency protocol."]
+  ]},
+  { name:"Bleeding Control & Trauma", items:[
+    [2,"Combat Gauze","Hemostatic gauze impregnated with a clotting agent. Packed directly into a severe wound to stop life-threatening bleeding that direct pressure alone can't control."],
+    [2,"Tourniquet","Windlass-style tourniquet applied above a limb wound to stop catastrophic arterial bleeding when direct pressure and packing fail."],
+    [2,"Occlusive Chest Seal","Airtight adhesive dressing placed over a penetrating chest wound to stop air from being pulled into the chest cavity and collapsing the lung."],
+    [1,"Trauma Shears","Heavy-duty shears used to quickly cut through clothing, boots, or seatbelts to expose and access an injury."],
+    [1,"Coban Kit w/ Shears","Self-adherent wrap that sticks to itself (not skin), used to secure dressings or splints snugly without tape. Kit includes shears to cut it to length."],
+    [1,"Ring Cutter","Small tool that slides under a ring to cut it off a swollen finger without causing further injury."]
+  ]},
+  { name:"Wound Care & Bandaging", items:[
+    [1,"6\u201d Trauma Wound Dressing","Large absorbent pad with an attached wrap, used to pack and bandage a major wound in a single step."],
+    [4,"Stretch Gauze","Conforming roller gauze wrapped around a dressing to hold it firmly in place over a wound."],
+    [10,"Sterile Gauze Sponges 4\u201dx4\u201d","Small sterile pads used to clean a wound or add absorbent padding underneath a larger dressing."],
+    [3,"ABD Pads 5\u201dx9\u201d","Large, thick absorbent pads placed over heavily bleeding or draining wounds to soak up fluid."],
+    [2,"Oval Eyepad","Soft, shaped pad used to cover and protect an injured eye without pressing directly on the eyeball."],
+    [1,"Triangular Bandage","Multi-purpose cloth that can be folded into an arm sling, used as a wrap, or tied to secure a splint."],
+    [2,"Non-Adherent Strips 3\u201dx8\u201d (Oil Emulsion)","Dressings coated so they won't stick to a wound, used to protect burns or abrasions while they heal."],
+    [1,"Band Aid Kit","Assorted adhesive bandages for minor cuts, blisters, and abrasions."],
+    [1,"Eye Wash (Eye Clean 4 fl oz)","Sterile eye irrigation solution used to flush dust, debris, ash, or chemicals out of a patient's eye."]
+  ]},
+  { name:"PPE & Safety", items:[
+    [1,"Safety Goggles","Eye protection worn by the provider to guard against blood or body fluid splash during patient care."],
+    [1,"Mask","Procedure mask worn by the provider for droplet and splash protection while treating a patient."],
+    [1,"Sharps Container","Rigid, puncture-resistant container for safely disposing of used needles and auto-injectors, preventing needle-stick injuries."]
+  ]},
+  { name:"Comfort & Environmental", items:[
+    [3,"Instant Cold Pack","Squeeze-activated pack that turns cold instantly, used to reduce swelling or treat a minor strain or burn."],
+    [1,"Instant Hot Pack","Squeeze-activated pack that turns warm instantly, used for muscle strains or to help warm a hypothermic patient."],
+    [1,"Survival Wrap","Reflective emergency blanket used to prevent heat loss and treat or prevent hypothermia and shock."],
+    [1,"Emesis Bag","Bag given to a nauseated patient to safely contain vomit."]
+  ]},
+  { name:"Tools & Documentation", items:[
+    [1,"Pen Light","Small flashlight used to check pupil response and assess neurological status, and to see in low light."],
+    [1,"Pen & Notepad","Used to record vital signs, times, and patient details for the patient care report."],
+    [1,"Glucometer","Handheld device used to check a patient's blood glucose level from a small finger-stick sample, helping confirm or rule out hypoglycemia in an altered or diabetic patient."],
+    [1,"Adult BP Cuff","Manual blood pressure cuff (sphygmomanometer) used with a stethoscope to measure an adult patient's blood pressure as part of a standard set of vitals."],
+    [1,"Pedi BP Cuff","Smaller manual blood pressure cuff sized for pediatric patients, used with a stethoscope to get an accurate blood pressure reading on a child."],
+    [1,"Stethoscope","Used to listen for a blood pressure reading (Korotkoff sounds) when taking manual vitals, and to check breath sounds on a patient."],
+    [1,"Trauma Shears","Second pair of heavy-duty shears kept accessible in the tools pocket for quickly cutting clothing, boots, or seatbelts to access an injury."],
+    [1,"SpO2 (Pulse Oximeter)","Clips onto a patient's finger to measure blood oxygen saturation and pulse rate, giving an objective read on oxygenation to guide oxygen therapy."]
+  ]},
+  { name:"OB", items:[
+    [1,"Emergency OB Kit","Sterile kit for an imminent or field childbirth, with supplies to deliver, clamp and cut the cord, and keep the newborn warm. Moved from the Utility 4454 medical pack."]
+  ]}
+];
+const MEDBAG_TOTAL = MEDBAG.reduce((a,c) => a + c.items.length, 0);
+
+function medbagHTML(){
+  const cats = MEDBAG.map((cat,ci) => {
+    const rows = cat.items.map(([q,n,use],ii) =>
+      `<div class="bag-row">
+         <label class="item" data-name="${esc((n + " " + use).toLowerCase())}">
+           <input type="checkbox" data-inv="bag:${ci}:${ii}">
+           <span class="qty">${q}</span><span>${esc(n)}</span>${tagFor("medbag|" + n)}
+           <button type="button" class="info" aria-label="What it's for">?</button>
+         </label>
+         <div class="use">${esc(use)}</div>
+       </div>`).join("");
+    return `<div class="bag-cat-group"><div class="bag-cat">${esc(cat.name)}</div><div class="items">${rows}</div></div>`;
+  }).join("");
+  return `<details class="bag" id="medbag">
+    <summary><span>Medical Bag Inventory</span><span class="prog" data-prog="bag"></span></summary>
+    <div class="bag-body">
+      <p class="bag-note">Contents of the medical bag. Tap ? for what an item is used for.</p>
+      ${cats}
+    </div>
+  </details>`;
+}
+
+const REARSEAT = [
+  [1,"Air hose"],
+  [2,"Cooler drain hoses"],
+  [1,"Traffic vest"],
+  [1,"Milwaukee blower with extension"],
+  [1,"Serpentine belt"],
+  [1,"Wind sock"],
+  [1,"WUI bag"],
+  [1,"Map bag with lock out kit"],
+  [1,"Spare green bag"],
+  [1,"NOCO battery jump box"],
+  [1,"Holmatro spare battery with charger and power cord"],
+  [1,"Traffic triangles"],
+  [1,"Jetboil box"],
+  [1,"Bag of towels"],
+  [1,"Vehicle care kit"]
+];
+
+function rearSeatHTML(){
+  const rows = REARSEAT.map(([q,n],i) =>
+    `<div class="bag-row">
+       <label class="item" data-name="${esc(n.toLowerCase())}">
+         <input type="checkbox" data-inv="rseat:${i}">
+         <span class="qty">${q}</span><span>${esc(n)}</span>
+       </label>
+     </div>`).join("");
+  return `<details class="bag" id="rearseat">
+    <summary><span>Rear Seat Inventory</span><span class="prog" data-prog="rseat"></span></summary>
+    <div class="bag-body">
+      <p class="bag-note">Vehicle care kit is the basket filled with various supplies.</p>
+      <div class="photos"><figure><img loading="lazy" src="img/IMG_9756.jpeg" alt="Rear seat inventory"></figure></div>
+      <div class="items">${rows}</div>
+    </div>
+  </details>`;
+}
+
+const CAPTSEAT = [
+  { name:"Under Captains Seat", photo:"IMG_9753.jpeg", items:[
+    [1,"Very pistol"],
+    [1,"DeWalt box with tire valves and Schrader valve tool"],
+    [2,"Chimney fire extinguishers"],
+    [1,"Tube of Gorilla Glue"],
+    [1,"Bundle of zip ties"],
+    [4,"Locks (3 combination, 1 keyed)"],
+    [1,"Roll of bailing wire"],
+    [1,"Spare mirror bracket"],
+    [1,"Roll of toilet paper"],
+    [1,"Wera screwdriver kit"],
+    [8,"AA batteries"],
+    [1,"Bag with toilet paper, ear protection, and a power cord"]
+  ]},
+  { name:"Captains Door", photo:"IMG_9754.jpeg", items:[
+    [1,"Shop towel"],
+    [1,"Air chuck for tires"],
+    [1,"Air nozzle"],
+    [1,"Flashlight"],
+    [1,"Adjustable wrench"],
+    [1,"Roll of electrical tape"],
+    [1,"Bottle of hand sanitizer"],
+    [1,"Weight ratings plate"]
+  ]}
+];
+
+function captSeatHTML(){
+  const groups = CAPTSEAT.map((g,gi) => {
+    const rows = g.items.map(([q,n],i) =>
+      `<div class="bag-row">
+         <label class="item" data-name="${esc(n.toLowerCase())}">
+           <input type="checkbox" data-inv="cseat:${gi}:${i}">
+           <span class="qty">${q}</span><span>${esc(n)}</span>
+         </label>
+       </div>`).join("");
+    return `<div class="bag-cat-group">
+      <div class="bag-cat">${esc(g.name)}</div>
+      <div class="photos"><figure><img loading="lazy" src="img/${g.photo}" alt="${esc(g.name)}"></figure></div>
+      <div class="items">${rows}</div>
+    </div>`;
+  }).join("");
+  return `<details class="bag" id="captseat">
+    <summary><span>Captains Seat &amp; Door</span><span class="prog" data-prog="cseat"></span></summary>
+    <div class="bag-body">${groups}</div>
+  </details>`;
+}
+
+const PASSSEAT = [
+  [1,"Box of flagging with spare IRPG"],
+  [1,"Seat belt hook harness"],
+  [1,"Blue tool roll"],
+  [1,"AA and AAA batteries"],
+  [1,"Lockout/tagout kit"],
+  [1,"Belt weather kit with Kestrel inside"],
+  [1,"MSA Altair 4XR gas monitor kit (with monitor and TIC charging cables)"]
+];
+
+function passSeatHTML(){
+  const rows = PASSSEAT.map(([q,n],i) =>
+    `<div class="bag-row">
+       <label class="item" data-name="${esc(n.toLowerCase())}">
+         <input type="checkbox" data-inv="pseat:${i}">
+         <span class="qty">${q}</span><span>${esc(n)}</span>
+       </label>
+     </div>`).join("");
+  return `<details class="bag" id="passseat">
+    <summary><span>Under Passenger Seat</span><span class="prog" data-prog="pseat"></span></summary>
+    <div class="bag-body">
+      <div class="photos"><figure><img loading="lazy" src="img/FullSizeRender.jpeg" alt="Under passenger seat"></figure></div>
+      <div class="items">${rows}</div>
+    </div>
+  </details>`;
+}
+
+const MEDKITS = [
+  { key:"spine", title:"Spine Kit", items:[
+    [1,"1000 mL Sterile Solution"],
+    [1,"Triage Tags"],
+    [1,"Thermometer"],
+    [2,"Spinal Immobilization Board Straps"],
+    [1,"OBG Kit"],
+    [1,"Zip Ties"],
+    [2,"Head Stabilizers"],
+    [1,"Traction Splint Device"],
+    [5,"C-Spine Collars"]
+  ]},
+  { key:"burn", title:"Burn Kit", items:[
+    [2,"1000 mL Sterile Solution"],
+    [2,"Eye Clean Solution"],
+    [1,"Trauma/Burn Towel"],
+    [1,"Dressing Pack"],
+    [1,"Emergency Blanket"],
+    [2,"Sterile Burn Sheets"],
+    [2,"Disposable Blankets"]
+  ]},
+  { key:"triage", title:"Triage Sling Bag", items:[
+    [1,"Box of Sharpies"],
+    [2,"Black Flagging"],
+    [2,"Red Flagging"],
+    [2,"Yellow Flagging"],
+    [2,"Green Flagging"],
+    [16,"Triage Tags"]
+  ]}
+];
+
+function medKitsHTML(){
+  return MEDKITS.map(k => {
+    const rows = k.items.map(([q,n],i) =>
+      `<div class="bag-row">
+         <label class="item" data-name="${esc(n.toLowerCase())}">
+           <input type="checkbox" data-inv="kit:${k.key}:${i}">
+           <span class="qty">${q}</span><span>${esc(n)}</span>${tagFor("kit_" + k.key + "|" + n)}
+         </label>
+       </div>`).join("");
+    return `<details class="bag" id="kit_${k.key}">
+      <summary><span>${esc(k.title)}</span><span class="prog" data-prog="kit_${k.key}"></span></summary>
+      <div class="bag-body"><div class="items">${rows}</div></div>
+    </details>`;
+  }).join("");
+}
+
+const compRoot = document.getElementById("compartments");
+COMPARTMENTS.forEach(c => {
+  const photos = c.photos.map(p =>
+    `<figure><img loading="lazy" src="img/${p.f}" alt="${esc(c.name)}">${p.c ? `<figcaption>${esc(p.c)}</figcaption>` : ""}</figure>`).join("");
+  const items = c.items.map(([q,n],i) =>
+    `<label class="item" data-name="${esc(n.toLowerCase())}">
+       <input type="checkbox" data-inv="${c.id}:${i}">
+       <span class="qty">${q}</span><span>${esc(n)}</span>${tagFor(c.id + "|" + n)}
+     </label>`).join("");
+  compRoot.appendChild(el(`<details class="comp" id="comp_${c.id}">
+    <summary><span>${esc(c.name)}</span><span class="prog" data-prog="${c.id}"></span></summary>
+    <div class="comp-body">
+      ${c.note ? `<p class="comp-note">${esc(c.note)}</p>` : ""}
+      <div class="photos">${photos}</div>
+      <div class="items">${items}</div>
+      ${c.id === "cab" ? rearSeatHTML() + captSeatHTML() + passSeatHTML() : ""}
+      ${c.id === "pass_medical" ? medbagHTML() + medKitsHTML() : ""}
+    </div>
+  </details>`));
+});
+
+function updateProg(id){
+  const c = COMPARTMENTS.find(x => x.id === id);
+  const done = c.items.reduce((a,_,i) => a + (invState[id + ":" + i] ? 1 : 0), 0);
+  const badge = document.querySelector(`[data-prog="${id}"]`);
+  badge.textContent = done + " / " + c.items.length;
+  badge.classList.toggle("done", done === c.items.length);
+}
+function updateBagProg(){
+  let done = 0;
+  MEDBAG.forEach((cat,ci) => cat.items.forEach((_,ii) => { if (invState["bag:" + ci + ":" + ii]) done++; }));
+  const badge = document.querySelector('[data-prog="bag"]');
+  badge.textContent = done + " / " + MEDBAG_TOTAL;
+  badge.classList.toggle("done", done === MEDBAG_TOTAL);
+}
+function updateRearProg(){
+  const done = REARSEAT.reduce((a,_,i) => a + (invState["rseat:" + i] ? 1 : 0), 0);
+  const badge = document.querySelector('[data-prog="rseat"]');
+  badge.textContent = done + " / " + REARSEAT.length;
+  badge.classList.toggle("done", done === REARSEAT.length);
+}
+function updateCseatProg(){
+  let done = 0, total = 0;
+  CAPTSEAT.forEach((g,gi) => g.items.forEach((_,i) => { total++; if (invState["cseat:" + gi + ":" + i]) done++; }));
+  const badge = document.querySelector('[data-prog="cseat"]');
+  badge.textContent = done + " / " + total;
+  badge.classList.toggle("done", done === total);
+}
+function updatePseatProg(){
+  const done = PASSSEAT.reduce((a,_,i) => a + (invState["pseat:" + i] ? 1 : 0), 0);
+  const badge = document.querySelector('[data-prog="pseat"]');
+  badge.textContent = done + " / " + PASSSEAT.length;
+  badge.classList.toggle("done", done === PASSSEAT.length);
+}
+function updateKitProg(key){
+  const k = MEDKITS.find(x => x.key === key);
+  const done = k.items.reduce((a,_,i) => a + (invState["kit:" + key + ":" + i] ? 1 : 0), 0);
+  const badge = document.querySelector('[data-prog="kit_' + key + '"]');
+  badge.textContent = done + " / " + k.items.length;
+  badge.classList.toggle("done", done === k.items.length);
+}
+// restore
+document.querySelectorAll("[data-inv]").forEach(cb => { cb.checked = !!invState[cb.dataset.inv]; });
+COMPARTMENTS.forEach(c => updateProg(c.id));
+updateBagProg();
+updateRearProg();
+updateCseatProg();
+updatePseatProg();
+MEDKITS.forEach(k => updateKitProg(k.key));
+
+compRoot.addEventListener("change", e => {
+  const cb = e.target;
+  if (!cb.dataset.inv) return;
+  invState[cb.dataset.inv] = cb.checked;
+  invSave();
+  const id = cb.dataset.inv.split(":")[0];
+  if (id === "bag") updateBagProg();
+  else if (id === "rseat") updateRearProg();
+  else if (id === "cseat") updateCseatProg();
+  else if (id === "pseat") updatePseatProg();
+  else if (id === "kit") updateKitProg(cb.dataset.inv.split(":")[1]);
+  else updateProg(id);
+});
+
+document.getElementById("invReset").addEventListener("click", () => {
+  if (!confirm("Reset all inventory checks?")) return;
+  invState = {}; invSave();
+  document.querySelectorAll("[data-inv]").forEach(cb => cb.checked = false);
+  COMPARTMENTS.forEach(c => updateProg(c.id));
+  updateBagProg();
+  updateRearProg();
+  updateCseatProg();
+  updatePseatProg();
+  MEDKITS.forEach(k => updateKitProg(k.key));
+});
+
+// search (shared by engine and utility inventories)
+function runInvSearch(root, raw){
+  const q = raw.trim().toLowerCase();
+  root.querySelectorAll("details.comp").forEach(d => {
+    let any = false;
+    d.querySelectorAll(".item").forEach(it => {
+      const hit = q && it.dataset.name.includes(q);
+      it.classList.toggle("hit", hit);
+      it.classList.toggle("miss", q && !hit);
+      if (!q) { it.classList.remove("hit","miss"); }
+      if (hit) any = true;
+    });
+    if (q) { d.style.display = any ? "" : "none"; d.open = any; }
+    else { d.style.display = ""; d.open = false; }
+    d.querySelectorAll("details.bag").forEach(b => {
+      const bagHit = [...b.querySelectorAll(".item")].some(x => x.classList.contains("hit"));
+      b.open = q ? bagHit : false;
+      b.querySelectorAll(".bag-cat-group").forEach(g => {
+        const gHit = [...g.querySelectorAll(".item")].some(x => x.classList.contains("hit"));
+        g.style.display = (q && !gHit) ? "none" : "";
+      });
+    });
+  });
+}
+document.getElementById("invSearch").addEventListener("input", e => runInvSearch(compRoot, e.target.value));
+
+// lightbox
+const lb = document.getElementById("lightbox");
+compRoot.addEventListener("click", e => {
+  if (e.target.classList.contains("info")) {
+    e.preventDefault();
+    const use = e.target.closest(".bag-row").querySelector(".use");
+    use.classList.toggle("open");
+    return;
+  }
+  if (e.target.tagName === "IMG") { lb.querySelector("img").src = e.target.src; lb.classList.add("open"); }
+});
+lb.addEventListener("click", () => lb.classList.remove("open"));
+
+// tabs
+const tabC = document.getElementById("tab-checkout"),
+      tabG = document.getElementById("tab-gas"), tabU = document.getElementById("tab-util"),
+      tabA = document.getElementById("tab-aed");
+function showTab(name){
+  document.body.classList.toggle("gas", name === "gas");
+  document.body.classList.toggle("util", name === "util");
+  document.body.classList.toggle("aed", name === "aed");
+  tabC.classList.toggle("active", name === "checkout");
+  tabG.classList.toggle("active", name === "gas");
+  tabU.classList.toggle("active", name === "util");
+  tabA.classList.toggle("active", name === "aed");
+  window.scrollTo(0,0);
+}
+tabC.addEventListener("click", () => showTab("checkout"));
+// engine sub-tabs (Checkout Sheet / Compartment Inventory), same as the utility
+const eSubSheet = document.getElementById("esub-sheet"), eSubInv = document.getElementById("esub-inv");
+function showESub(name){
+  document.body.classList.toggle("esub-inv", name === "inv");
+  eSubSheet.classList.toggle("active", name === "sheet");
+  eSubInv.classList.toggle("active", name === "inv");
+  window.scrollTo(0,0);
+}
+eSubSheet.addEventListener("click", () => showESub("sheet"));
+eSubInv.addEventListener("click", () => showESub("inv"));
+tabG.addEventListener("click", () => showTab("gas"));
+tabU.addEventListener("click", () => showTab("util"));
+tabA.addEventListener("click", () => showTab("aed"));
+
+// ---- Altair 4XR monthly log ----
+const LOG_KEY = "e4454_altair_log_v1";
+const LOG_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+let gasLog = [];
+try { gasLog = JSON.parse(localStorage.getItem(LOG_KEY) || "[]"); } catch(e){}
+function logSave(){ try { localStorage.setItem(LOG_KEY, JSON.stringify(gasLog)); } catch(e){} }
+function localToday(){
+  const n = new Date();
+  return n.getFullYear() + "-" + String(n.getMonth()+1).padStart(2,"0") + "-" + String(n.getDate()).padStart(2,"0");
+}
+function logFmtDate(iso){ const p = iso.split("-"); return LOG_MONTHS[+p[1]-1] + " " + (+p[2]) + ", " + p[0]; }
+const logRoot = document.getElementById("logEntries");
+function renderLog(){
+  gasLog.sort((a,b) => b.d.localeCompare(a.d));
+  logRoot.innerHTML = "";
+  gasLog.forEach((en,i) => {
+    const done = [en.chg && "Charged", en.z && "Zero", en.s && "Span", en.b && "Bump"].filter(Boolean).join(" \u00b7 ") || "\u2014";
+    logRoot.appendChild(el(`<div class="log-entry">
+      <b class="date">${logFmtDate(en.d)}</b>
+      <span class="res${en.r === "FAIL" ? " fail" : ""}">${en.r}</span>
+      <span class="done">${done}${en.init ? " \u2014 " + esc(en.init) : ""}</span>
+      <button class="del" type="button" data-i="${i}" aria-label="Delete entry">&times;</button>
+      ${en.notes ? `<span class="note">${esc(en.notes)}</span>` : ""}
+    </div>`));
+  });
+  const cur = localToday().slice(0,7);
+  const label = LOG_MONTHS[+cur.slice(5,7)-1] + " " + cur.slice(0,4);
+  document.getElementById("logDue").textContent =
+    gasLog.some(en => en.d.slice(0,7) === cur) ? "\u2713 " + label + " logged" : "Due for " + label;
+}
+document.getElementById("lg_add").addEventListener("click", () => {
+  const d = document.getElementById("lg_date").value;
+  if (!d) { alert("Enter the date."); return; }
+  if (!document.getElementById("lg_init").value.trim()) { alert("Enter your initials."); return; }
+  if (!["lg_charged","lg_zero","lg_span","lg_bump"].some(id => document.getElementById(id).checked) &&
+      !confirm("Nothing is checked (Charged / Zero / Span / Bump). Save anyway?")) return;
+  gasLog.push({
+    d,
+    chg: document.getElementById("lg_charged").checked,
+    z: document.getElementById("lg_zero").checked,
+    s: document.getElementById("lg_span").checked,
+    b: document.getElementById("lg_bump").checked,
+    r: document.getElementById("lg_result").value,
+    init: document.getElementById("lg_init").value.trim(),
+    notes: document.getElementById("lg_notes").value.trim()
+  });
+  logSave(); renderLog();
+  ["lg_charged","lg_zero","lg_span","lg_bump"].forEach(id => document.getElementById(id).checked = false);
+  document.getElementById("lg_notes").value = "";
+});
+logRoot.addEventListener("click", e => {
+  if (!e.target.classList.contains("del")) return;
+  if (!confirm("Delete this log entry?")) return;
+  gasLog.splice(+e.target.dataset.i, 1); logSave(); renderLog();
+});
+document.getElementById("lg_date").value = localToday();
+renderLog();
+
+// ================= AED — electronic EMS-711-2 =================
+// ---- finger-drawn initials pad ----
+function makePad(canvas){
+  const ctx = canvas.getContext("2d");
+  let drawing = false, dirty = false, last = null;
+  function size(){
+    const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.lineWidth = 2.6; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#000";
+    dirty = false;
+  }
+  function pos(e){ const r = canvas.getBoundingClientRect(); return { x:e.clientX - r.left, y:e.clientY - r.top }; }
+  canvas.addEventListener("pointerdown", e => { if (!canvas.width) size(); drawing = true; last = pos(e);
+    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+    ctx.beginPath(); ctx.arc(last.x, last.y, 1.2, 0, Math.PI*2); ctx.fill(); dirty = true; e.preventDefault(); });
+  canvas.addEventListener("pointermove", e => { if (!drawing) return; const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; dirty = true; e.preventDefault(); });
+  ["pointerup","pointercancel","pointerleave"].forEach(t => canvas.addEventListener(t, () => drawing = false));
+  return {
+    size, clear: size,
+    isEmpty: () => !dirty,
+    // small PNG (keeps storage light): scale the drawing down to 180px wide
+    toData(){ const o = document.createElement("canvas"); o.width = 180; o.height = Math.round(180 * canvas.height / canvas.width) || 47;
+      o.getContext("2d").drawImage(canvas, 0, 0, o.width, o.height); return o.toDataURL("image/png"); }
+  };
+}
+const pads = { f7: makePad(document.getElementById("f7_pad")), ag: makePad(document.getElementById("ag_pad")) };
+document.querySelectorAll(".padclear").forEach(b => b.addEventListener("click", () => pads[b.dataset.pad].clear()));
+// canvases have no size while their tab is hidden — size them when the AED tab opens
+tabA.addEventListener("click", () => setTimeout(() => { pads.f7.size(); pads.ag.size(); }, 0));
+window.addEventListener("resize", () => { if (document.body.classList.contains("aed")) { pads.f7.size(); pads.ag.size(); } });
+
+// ---- Side 1: daily records, stored per month ----
+const F7_KEY = "e4454_ems7112_v1";
+let f7 = {};
+try { f7 = JSON.parse(localStorage.getItem(F7_KEY) || "{}"); } catch(e){}
+function f7Save(){
+  try { localStorage.setItem(F7_KEY, JSON.stringify(f7)); return true; }
+  catch(e){ alert("This iPad's storage is full — the entry was NOT saved. Save older months as PDF, then ask to clear old months."); return false; }
+}
+const F7_HDR_DEFAULT = { loc:"TCU — Skull Creek FFS", aed:"", equip:"E4454", radio:"" };
+const f7MonthEl = document.getElementById("f7_month");
+function f7Month(){ return f7MonthEl.value || localToday().slice(0,7); }
+function f7Get(ym){
+  if (!f7[ym]) {
+    // carry header forward from the most recent earlier month
+    const prev = Object.keys(f7).filter(k => k < ym).sort().pop();
+    f7[ym] = { hdr: Object.assign({}, F7_HDR_DEFAULT, prev ? f7[prev].hdr : {}), days:{} };
+  }
+  return f7[ym];
+}
+function daysIn(ym){ const [y,m] = ym.split("-").map(Number); return new Date(y, m, 0).getDate(); }
+function monthName(ym){ const [y,m] = ym.split("-"); return ["January","February","March","April","May","June","July","August","September","October","November","December"][+m-1] + " " + y; }
+function f7Names(){
+  const set = new Set();
+  Object.values(f7).forEach(mo => Object.values(mo.days).forEach(d => d.name && set.add(d.name)));
+  aedLog.forEach(en => en.name && set.add(en.name));
+  document.getElementById("f7names").innerHTML = [...set].sort().map(n => `<option value="${esc(n)}">`).join("");
+}
+function f7Render(){
+  const ym = f7Month(), mo = f7Get(ym), today = localToday();
+  document.querySelectorAll("[data-h]").forEach(i => i.value = mo.hdr[i.dataset.h] || "");
+  const dEl = document.getElementById("f7_date");
+  dEl.min = ym + "-01"; dEl.max = ym + "-" + String(daysIn(ym)).padStart(2,"0");
+  if (!dEl.value || dEl.value.slice(0,7) !== ym) dEl.value = today.slice(0,7) === ym ? today : ym + "-01";
+  let rows = `<tr><th>Date</th><th>Inventory</th><th>AED used on patient (Incident #)</th><th>Comments</th><th>Inspected by</th><th></th></tr>`;
+  for (let d = 1; d <= daysIn(ym); d++) {
+    const r = mo.days[d], iso = ym + "-" + String(d).padStart(2,"0");
+    rows += `<tr class="${iso === today ? "today" : ""}"><td class="d">${d}</td>` + (r
+      ? `<td class="${r.inv === "NO" ? "no" : ""}">${r.inv === "NO" ? "MISSING" : "✓ Complete"}</td>
+         <td>${esc(r.inc || "")}</td><td>${esc(r.comm || "")}</td>
+         <td>${esc(r.name)} ${r.sig ? `<img src="${r.sig}" alt="initials">` : ""}</td>
+         <td><button class="x" type="button" data-day="${d}" aria-label="Remove entry">&times;</button></td>`
+      : `<td></td><td></td><td></td><td></td><td></td>`) + `</tr>`;
+  }
+  document.getElementById("f7Table").innerHTML = rows;
+  f7Status();
+}
+function f7Status(){
+  const t = localToday(), r = (f7[t.slice(0,7)] || {days:{}}).days[+t.slice(8)];
+  const txt = r ? "✓ Today initialed — " + r.name : "Today not initialed";
+  document.getElementById("f7Today").textContent = txt;
+  const s = document.getElementById("f7Stat");
+  if (s) { s.innerHTML = "EMS-711-2: " + (r ? "\u2713 initialed today by " + esc(r.name) : "not initialed today<span class=\"noprint\"> \u2014 tap to open the AED tab</span>"); s.classList.toggle("ok", !!r); }
+}
+document.querySelectorAll("[data-h]").forEach(i => i.addEventListener("input", () => {
+  f7Get(f7Month()).hdr[i.dataset.h] = i.value; f7Save();
+}));
+f7MonthEl.addEventListener("change", f7Render);
+document.getElementById("f7_save").addEventListener("click", () => {
+  const date = document.getElementById("f7_date").value, inv = document.getElementById("f7_inv").value,
+        name = document.getElementById("f7_name").value.trim();
+  const ym = f7Month();
+  if (!date || date.slice(0,7) !== ym) { alert("Pick a date in " + monthName(ym) + "."); return; }
+  if (!inv) { alert("Mark whether the inventory is complete."); return; }
+  if (!name) { alert("Enter your printed name."); return; }
+  if (pads.f7.isEmpty()) { alert("Initial in the box with your finger."); return; }
+  const comm = document.getElementById("f7_comm").value.trim();
+  if (inv === "NO" && !comm && !confirm("Inventory marked NO but Comments is empty. Save without listing what's missing?")) return;
+  const mo = f7Get(ym), day = +date.slice(8);
+  if (mo.days[day] && !confirm("Day " + day + " is already initialed by " + mo.days[day].name + ". Replace it?")) return;
+  mo.days[day] = { inv, inc: document.getElementById("f7_inc").value.trim(), comm, name,
+                   sig: pads.f7.toData(), ts: new Date().toISOString() };
+  if (!f7Save()) { delete mo.days[day]; return; }
+  ["f7_inv","f7_inc","f7_comm","f7_name","f7_date"].forEach(id => document.getElementById(id).value = "");
+  pads.f7.clear(); f7Names(); f7Render();
+});
+document.getElementById("f7Table").addEventListener("click", e => {
+  if (!e.target.classList.contains("x")) return;
+  const mo = f7Get(f7Month()), d = +e.target.dataset.day;
+  if (!confirm("Remove the day " + d + " entry (" + mo.days[d].name + ")?")) return;
+  delete mo.days[d]; f7Save(); f7Render();
+});
+
+// ---- Side 2: monthly inspection ----
+const AED_KEY = "e4454_aed_log_v1";
+const AED_YN = [
+  ["status","Status indicator"],["clean","Clean / no damage"],["adult","2 sets adult pads"],
+  ["pedi","2 sets pedi pads"],["scissors","Scissors & razor"],["forms","2 EMS-713 forms"]
+];
+const AED_EXP = [
+  ["ap1","Adult pads #1"],["ap2","Adult pads #2"],["pp1","Pedi pads #1"],["pp2","Pedi pads #2"],
+  ["bat","AED battery"],["bat2","Backup AED battery"]
+];
+let aedLog = [];
+try { aedLog = JSON.parse(localStorage.getItem(AED_KEY) || "[]"); } catch(e){}
+function aedSave(){
+  try { localStorage.setItem(AED_KEY, JSON.stringify(aedLog)); return true; }
+  catch(e){ alert("This iPad's storage is full — the monthly entry was NOT saved."); return false; }
+}
+function expTag(ym){
+  if (!ym) return `<span class="tag none">no date</span>`;
+  const s = expStatus(ym);
+  return `<span class="tag ${s}">${s === "expired" ? "EXPIRED " : "Exp "}${expLabel(ym)}</span>`;
+}
+const aedRoot = document.getElementById("aedEntries");
+function renderAed(){
+  aedLog.sort((a,b) => b.d.localeCompare(a.d));
+  aedRoot.innerHTML = "";
+  aedLog.forEach((en,i) => {
+    const nos = AED_YN.filter(([k]) => en[k] === "NO").map(([,l]) => l);
+    const blanks = AED_YN.filter(([k]) => !en[k]).length;
+    const expired = AED_EXP.some(([k]) => en[k] && expStatus(en[k]) === "expired");
+    const ok = !nos.length && !expired;
+    const exps = AED_EXP.map(([k,l]) => `<span>${esc(l)}: ${expTag(en[k])}</span>`).join("");
+    const who = en.name || en.init || "";
+    aedRoot.appendChild(el(`<div class="log-entry">
+      <b class="date">${logFmtDate(en.d)}</b>
+      <span class="res${ok ? "" : " fail"}">${ok ? "OK" : "ISSUE"}</span>
+      <span class="done">${nos.length ? "NO: " + esc(nos.join(", ")) : (blanks ? blanks + " item(s) not marked" : "All items YES")}${who ? " — " + esc(who) : ""}${en.sig ? ` <img class="sig" src="${en.sig}" alt="initials">` : ""}${en.serial ? " • S/N " + esc(en.serial) : ""}</span>
+      <button class="del" type="button" data-i="${i}" aria-label="Delete entry">&times;</button>
+      <span class="exps">${exps}</span>
+      ${en.other ? `<span class="note">Other: ${esc(en.other)}</span>` : ""}
+      ${en.notes ? `<span class="note">${esc(en.notes)}</span>` : ""}
+    </div>`));
+  });
+  const cur = localToday().slice(0,7);
+  const label = LOG_MONTHS[+cur.slice(5,7)-1] + " " + cur.slice(0,4);
+  document.getElementById("aedDue").textContent =
+    aedLog.some(en => en.d.slice(0,7) === cur) ? "✓ " + label + " logged" : "Due for " + label;
+  const box = document.getElementById("aedCurrent"), from = document.getElementById("aedCurFrom");
+  const last = aedLog[0];
+  if (!last) { renderExpSummaries(); box.innerHTML = `<div class="empty">No monthly inspection yet — complete side 2 below to track pad and battery dates.</div>`; from.textContent = ""; return; }
+  from.textContent = "From " + logFmtDate(last.d);
+  box.innerHTML = AED_EXP.map(([k,l]) => `<div class="row"><span>${esc(l)}</span>${expTag(last[k])}</div>`).join("");
+  renderExpSummaries();
+}
+function aedPrefill(){
+  const last = aedLog[0];
+  document.getElementById("ag_date").value = localToday();
+  AED_YN.forEach(([k]) => { const s = document.getElementById("ag_" + k); s.value = ""; s.classList.remove("no"); });
+  ["ag_notes","ag_other","ag_name"].forEach(id => document.getElementById(id).value = "");
+  pads.ag.clear();
+  const hdrAed = f7Get(f7Month()).hdr.aed;
+  document.getElementById("ag_serial").value = (last && last.serial) || hdrAed || "";
+  AED_EXP.forEach(([k]) => { document.getElementById("ag_" + k).value = (last && last[k]) || ""; });
+}
+AED_YN.forEach(([k]) => document.getElementById("ag_" + k).addEventListener("change", e =>
+  e.target.classList.toggle("no", e.target.value === "NO")));
+document.getElementById("ag_add").addEventListener("click", () => {
+  const d = document.getElementById("ag_date").value;
+  if (!d) { alert("Enter the date."); return; }
+  const en = { d,
+    name: document.getElementById("ag_name").value.trim(),
+    serial: document.getElementById("ag_serial").value.trim(),
+    other: document.getElementById("ag_other").value.trim(),
+    notes: document.getElementById("ag_notes").value.trim(),
+    ts: new Date().toISOString() };
+  if (!en.name) { alert("Enter your printed name (Inspected By)."); return; }
+  if (pads.ag.isEmpty()) { alert("Initial in the box with your finger."); return; }
+  AED_YN.forEach(([k]) => en[k] = document.getElementById("ag_" + k).value);
+  AED_EXP.forEach(([k]) => en[k] = document.getElementById("ag_" + k).value);
+  const unmarked = AED_YN.filter(([k]) => !en[k]).length;
+  if (unmarked && !confirm(unmarked + " YES/NO item(s) not marked. Save anyway?")) return;
+  if (AED_YN.some(([k]) => en[k] === "NO") && !en.notes &&
+      !confirm("A NO was marked but Remarks is empty. Save without noting what's missing?")) return;
+  en.sig = pads.ag.toData();
+  aedLog.push(en);
+  if (!aedSave()) { aedLog.pop(); return; }
+  renderAed(); aedPrefill(); f7Names();
+});
+aedRoot.addEventListener("click", e => {
+  if (!e.target.classList.contains("del")) return;
+  if (!confirm("Delete this monthly inspection?")) return;
+  aedLog.splice(+e.target.dataset.i, 1); aedSave(); renderAed(); aedPrefill();
+});
+
+// ---- printable EMS-711-2 (2 pages, laid out like the paper form) ----
+function f7PrintHTML(ym){
+  const mo = f7Get(ym), h = mo.hdr, [y,m] = ym.split("-");
+  const mon = monthName(ym).split(" ")[0];
+  let rows = "";
+  for (let d = 1; d <= 31; d++) {
+    const r = d <= daysIn(ym) ? mo.days[d] : null;
+    rows += `<tr><td class="c">${d}</td>` + (r
+      ? `<td class="c">${r.inv === "NO" ? "MISSING" : "&#10003;"}</td><td>${esc(r.inc || "")}</td><td>${esc(r.comm || "")}</td>
+         <td>${esc(r.name)} ${r.sig ? `<img src="${r.sig}" alt="">` : ""}</td>`
+      : `<td></td><td></td><td></td><td></td>`) + `</tr>`;
+  }
+  const mEn = aedLog.filter(en => en.d.slice(0,7) === ym).sort((a,b) => b.d.localeCompare(a.d))[0] || {};
+  const yn = k => `<td style="text-align:center"><span class="bx">${mEn[k] === "YES" ? "X" : ""}</span></td><td style="text-align:center"><span class="bx">${mEn[k] === "NO" ? "X" : ""}</span></td>`;
+  const ex = k => mEn[k] ? expLabel(mEn[k]) : "";
+  return `
+  <div class="pg">
+    <div class="hd"><div class="agency">STATE OF CALIFORNIA, NATURAL RESOURCES AGENCY<br>DEPARTMENT OF FORESTRY AND FIRE PROTECTION
+      <div class="title">DAILY AUTOMATIC EXTERNAL DEFIBRILLATOR (AED)<br>INSPECTION REPORT</div><div class="formno">EMS-711-2 (REV. 12/22)</div></div>
+      <div class="formno">Side 1</div></div>
+    <table style="margin-top:6px">
+      <tr><td style="width:60%"><span class="lbl">Assigned location (unit &amp; station)</span><span class="val">${esc(h.loc || "")}</span></td>
+          <td><span class="lbl">Month</span><span class="val">${mon}</span></td><td><span class="lbl">Year</span><span class="val">${y}</span></td></tr>
+      <tr><td><span class="lbl">AED make/model/serial number</span><span class="val">${esc(h.aed || "")}</span></td>
+          <td><span class="lbl">Equipment</span><span class="val">${esc(h.equip || "")}</span></td><td><span class="lbl">Radio no.</span><span class="val">${esc(h.radio || "")}</span></td></tr>
+    </table>
+    <div class="note">Note: This is a two-sided form. Monthly check-out is shown on reverse side.</div>
+    <table class="daily">
+      <tr><th style="width:7%">Date</th><th style="width:11%">Inventory</th><th style="width:20%">AED used on patient<br>(incident #)</th><th>Comments</th><th style="width:26%">Inspected by</th></tr>
+      ${rows}
+    </table>
+    <div class="foot">At the end of each month file at work location and maintain for two years.</div>
+  </div>
+  <div class="pg">
+    <div class="hd"><div></div><div class="formno">Side 2</div></div>
+    <h3>DAILY INSPECTION PROCEDURE</h3>
+    <p>Certification of Inspection: By signing name in the "Inspected By" column on Side 1 of this form, the employee certifies that they have performed all the inspection activities listed below for the Automatic External Defibrillator (AED) to which this report applies. Notify the Unit/Program EMS Coordinator as necessary for repairs/replacement.</p>
+    <p><b>CHECK:</b></p>
+    <ol><li>Inventory &ndash; Is the entire inventory present? Note missing items in remarks and re-supply</li>
+      <li>AED Used on Patient &ndash; List the full Incident number, i.e. CA-SCU-4000</li>
+      <li>Comments &ndash; List missing or replaced items, important information, etc.</li>
+      <li>Inspected By &ndash; Name (printed) and signature of employee inspecting the AED Unit</li></ol>
+    <h3>MONTHLY INSPECTION PROCEDURE</h3>
+    <p>The AED Unit will have an additional inspection at the end of the month. Inspect the Unit as well as Side 1 of the AED Inspection Form for discrepancies.</p>
+    <p><b>CHECK:</b>${mEn.d ? ` &nbsp; (monthly inspection completed ${logFmtDate(mEn.d)})` : ""}</p>
+    <table class="mchk" style="width:100%; table-layout:fixed">
+      <colgroup><col style="width:5%"><col style="width:51%"><col style="width:8%"><col style="width:8%"><col style="width:28%"></colgroup>
+      <tr><th></th><th style="text-align:left">1. AED:</th><th>YES</th><th>NO</th><th></th></tr>
+      <tr><td></td><td style="text-align:right">Status indicator visible and operable</td>${yn("status")}<td></td></tr>
+      <tr><td></td><td style="text-align:right">Clean and no damage noted</td>${yn("clean")}<td></td></tr>
+      <tr><td></td><th style="text-align:left">2. INVENTORY:</th><td></td><td></td><td></td></tr>
+      <tr><td></td><td style="text-align:right">Two sets of adult pads</td>${yn("adult")}<td>1-Exp. date: ${ex("ap1")}<br>2-Exp. date: ${ex("ap2")}</td></tr>
+      <tr><td></td><td style="text-align:right">Two sets of pediatric pads</td>${yn("pedi")}<td>1-Exp. date: ${ex("pp1")}<br>2-Exp. date: ${ex("pp2")}</td></tr>
+      <tr><td></td><td style="text-align:right">Scissors &amp; Razor</td>${yn("scissors")}<td></td></tr>
+      <tr><td></td><td style="text-align:right">Two AED use forms (EMS-713)</td>${yn("forms")}<td></td></tr>
+      <tr><td></td><td style="text-align:right">AED battery</td><td></td><td></td><td>Exp. date: ${ex("bat")}</td></tr>
+      <tr><td></td><td style="text-align:right">Backup AED battery</td><td></td><td></td><td>Exp. date: ${ex("bat2")}</td></tr>
+      <tr><td>3.</td><td colspan="4"><b>OTHER:</b> ${esc(mEn.other || "")}</td></tr>
+      <tr><td>4.</td><td colspan="4"><b>INSPECTED BY:</b> ${esc(mEn.name || "")} ${mEn.sig ? `<img class="sigimg" src="${mEn.sig}" alt="">` : ""}</td></tr>
+      <tr><td>5.</td><td colspan="4" style="height:60px"><b>REMARKS:</b> ${esc(mEn.notes || "")}</td></tr>
+    </table>
+    <div class="gen">Completed electronically in the E4454 checkout app. Initials were drawn by the named inspector at the time of entry. Generated ${new Date().toLocaleString()}.</div>
+  </div>`;
+}
+document.getElementById("f7_pdf").addEventListener("click", () => {
+  const ym = f7Month();
+  const filled = Object.keys(f7Get(ym).days).length;
+  if (!aedLog.some(en => en.d.slice(0,7) === ym) &&
+      !confirm("The monthly inspection (side 2) for " + monthName(ym) + " hasn't been done yet. Save the PDF anyway?")) return;
+  document.getElementById("f711print").innerHTML = f7PrintHTML(ym);
+  const oldTitle = document.title;
+  document.title = "EMS-711-2_E4454_" + ym;
+  document.body.classList.add("print711");
+  f7OldTitle = oldTitle;
+  window.print();
+});
+let f7OldTitle = null;
+window.addEventListener("afterprint", () => {
+  if (!document.body.classList.contains("print711")) return;
+  document.body.classList.remove("print711");
+  if (f7OldTitle) document.title = f7OldTitle;
+});
+
+// ---- 60-day expiration summary ----
+function daysLeft(ym){ const [y,m] = ym.split("-").map(Number);
+  return Math.ceil((new Date(y, m, 0, 23, 59, 59) - new Date()) / 86400000); }
+function renderExpSummary(veh, rootId){
+  const list = PERISHABLES.filter(p => p.veh === veh).map(p => ({ kit:p.kit, item:p.item, qty:p.qty, exp:p.exp }));
+  if (veh === "E" && aedLog[0]) {   // AED pads & batteries from the latest monthly AED inspection
+    AED_EXP.forEach(([k,l]) => { if (aedLog[0][k]) list.push({ kit:"AED", item:l, qty:1, exp:aedLog[0][k] }); });
+  }
+  list.forEach(p => p.days = daysLeft(p.exp));
+  list.sort((a,b) => a.days - b.days);
+  const due = list.filter(p => p.days <= 60), next = list.find(p => p.days > 60);
+  const root = document.getElementById(rootId);
+  root.classList.toggle("alert", due.length > 0);
+  const title = veh === "E" ? "Engine 4454" : "Utility 4454";
+  if (!due.length) {
+    root.innerHTML = `<div class="hd"><span>Expiring within 60 days</span><small>${title} medical supplies</small></div>
+      <div class="ok">\u2713 Nothing expiring in the next 60 days.${next ? ` <span>Next up: ${esc(next.item)} (${esc(next.kit)}) \u2014 ${expLabel(next.exp)}</span>` : ""}</div>`;
+    return;
+  }
+  root.innerHTML = `<div class="hd"><span>\u26a0 Expiring within 60 days \u2014 ${due.length} item${due.length > 1 ? "s" : ""}</span><small>${title} \u2022 replace/order now</small></div>` +
+    due.map(p => `<div class="r">${expTag(p.exp)}<span class="what">${esc(p.item)}${p.qty > 1 ? " \u00d7" + p.qty : ""} <small>\u2014 ${esc(p.kit)}</small></span>
+      <span class="when">${p.days < 0 ? "expired " + (-p.days) + " days ago" : "in " + p.days + " days"}</span></div>`).join("");
+}
+function renderExpSummaries(){ renderExpSummary("E","expSumE"); renderExpSummary("U","expSumU"); }
+
+// When the app is reopened (iPad left on this page overnight), refresh everything that depends on today's date.
+let lastDay = localToday();
+function refreshForToday(){
+  const t = localToday();
+  if (t !== lastDay) {   // new day: move the month view and default dates forward
+    if (f7MonthEl.value === lastDay.slice(0,7)) f7MonthEl.value = t.slice(0,7);
+    ["lg_date","ag_date"].forEach(id => { const e = document.getElementById(id); if (e.value === lastDay) e.value = t; });
+    lastDay = t; f7Render();
+  }
+  checkStale(); f7Status(); renderLog(); renderAed(); renderUDue(); renderSpare();
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshForToday(); });
+
+// ---- Backup / restore of everything this app stores on the iPad ----
+const BK_LAST = "e4454_last_backup";
+function appKeys(){ const k = []; for (let i = 0; i < localStorage.length; i++) { const n = localStorage.key(i); if (/^(e4454|u4454)_/.test(n) && n !== BK_LAST) k.push(n); } return k; }
+function bkInfo(){
+  let last = null; try { last = localStorage.getItem(BK_LAST); } catch(e){}
+  let bytes = 0; try { appKeys().forEach(k => bytes += (localStorage.getItem(k) || "").length); } catch(e){}
+  document.getElementById("bkInfo").textContent = "Last backup: " + (last ? logFmtDate(last) : "never") +
+    " \u2022 Data size: " + (bytes / 1024).toFixed(0) + " KB";
+}
+document.getElementById("bkSave").addEventListener("click", () => {
+  const data = {}; appKeys().forEach(k => data[k] = localStorage.getItem(k));
+  const blob = new Blob([JSON.stringify({ app:"E4454 checkout", saved:new Date().toISOString(), data }, null, 1)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "E4454_app_backup_" + localToday() + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  try { localStorage.setItem(BK_LAST, localToday()); } catch(e){}
+  bkInfo();
+});
+document.getElementById("bkLoad").addEventListener("click", () => document.getElementById("bkFile").click());
+document.getElementById("bkFile").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    let b; try { b = JSON.parse(r.result); } catch(err) { alert("That file isn't an app backup."); return; }
+    if (!b || b.app !== "E4454 checkout" || !b.data) { alert("That file isn't an E4454 app backup."); return; }
+    const when = b.saved ? new Date(b.saved).toLocaleString() : "unknown date";
+    if (!confirm("Replace ALL app data on this iPad with the backup from " + when + "?\n\nAnything entered since that backup will be lost.")) return;
+    try {
+      appKeys().forEach(k => localStorage.removeItem(k));
+      Object.entries(b.data).forEach(([k,v]) => { if (/^(e4454|u4454)_/.test(k)) localStorage.setItem(k, v); });
+    } catch(err) { alert("Restore failed: this iPad's storage is full."); return; }
+    alert("Backup restored. The app will reload."); location.reload();
+  };
+  r.readAsText(f); e.target.value = "";
+});
+bkInfo();
+window.addEventListener("focus", refreshForToday);
+
+f7MonthEl.value = localToday().slice(0,7);
+renderAed();
+f7Names();
+f7Render();
+aedPrefill();
+
+// ================= UTILITY 4454 =================
+// ---- Expiration dates (YYYY-MM) — update here when an item is replaced ----
+// Utility dates come from PERISHABLES (top of script) — edit them there.
+const EXP = Object.fromEntries(PERISHABLES.filter(p => p.id).map(p => [p.id, p.exp]));
+function expLabel(ym){ const [y,m] = ym.split("-"); return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1] + " " + y; }
+function expStatus(ym){
+  const [y,m] = ym.split("-").map(Number);
+  const end = new Date(y, m, 0, 23, 59, 59);          // last day of that month
+  const days = (end - new Date()) / 86400000;
+  return days < 0 ? "expired" : days <= 60 ? "soon" : "ok";
+}
+
+// ---- Checkout sheet items (add more utility equipment here, same format as the engine) ----
+// Utility checkout is WEEKLY (engine is daily).
+const UTIL_VEHICLE = [
+  { id:"vehicle", name:"Vehicle",
+    sub:"Tires listed at 80 PSI • 50 PSI gives a smoother ride on the Skull Creek dirt roads",
+    checks:["Fuel level checked","Tire pressure checked","No dash warning lights"],
+    fields:[ { key:"fuel", label:"Fuel level:" }, { key:"tirepsi", label:"Tire PSI:" } ] },
+  { id:"spare", name:"Spare tire \u2014 MONTHLY",
+    sub:"Check once a month (first weekly checkout of the month)",
+    checks:["Spare tire pressure checked"],
+    fields:[ { key:"psi", label:"Spare PSI:" } ] },
+  { id:"tcoff", name:"Tablet Command tablet",
+    sub:"Front seat \u2022 \u26a0 TURN IT OFF when not in use \u2014 its battery will die if the utility isn't driven for a week or so",
+    checks:["Tablet Command turned off"] },
+];
+const UTIL_EQUIPMENT = [
+  { id:"medline", name:"Medical line pack", sub:"Back seat • EpiPen exp " + expLabel(EXP.epi),
+    checks:["Present","Contents complete","EpiPen in date"] },
+  { id:"medpack", name:"Medical pack",
+    sub:"Passenger side bed lid • Adult Epi exp " + expLabel(EXP.mpAdultEpi) +
+        " • Pedi Epi exp " + expLabel(EXP.mpPediEpi) +
+        " • Sterile water exp " + expLabel(EXP.mpWater),
+    checks:["Present","Contents complete","EpiPens in date","O2 bottle present"],
+    field:{ key:"psi", label:"O2 PSI:" } },
+  { id:"burnkit", name:"Burn kit", sub:"Driver side bed lid • Sterile water exp " + expLabel(EXP.uBurnWater) + " • punctured water/eye wash soaks the bandages",
+    checks:["Sterile water not punctured/leaking","Eye wash not punctured/leaking","Bandages dry"] },
+  { id:"saw365", name:"Husqvarna 365 chainsaw", sub:"Slide-out bed • leaky bar oil — add before use",
+    checks:["Runs","Clean","Chain sharp"] },
+  { id:"tote", name:"Tote — fuel & bar oil", sub:"Slide-out bed",
+    checks:["Premix cans not leaking","Bar oil not leaking"] },
+  { id:"cooler", name:"Cooler", sub:"Slide-out bed",
+    checks:["Full of water & Gatorade","Iced up (if needed)"] },
+  { id:"backpump", name:"Back pump", sub:"Slide-out bed",
+    checks:["Full of water"] },
+  { id:"blower", name:"Milwaukee blower", sub:"Under rear seat \u2022 blower, battery & charger",
+    checks:["Battery charged","Runs","Charger present"] },
+];
+const UTIL_DRAFT_KEY = "u4454_daily_checkout_v1";
+
+function renderUEquipment(list, rootId){
+  const root = document.getElementById(rootId);
+  list.forEach(eq => {
+    const checks = eq.checks.map((c,i) =>
+      `<label class="chk"><input type="checkbox" data-u="${eq.id}_c${i}"><span>${esc(c)}</span></label>`).join("");
+    const fields = (eq.fields || (eq.field ? [eq.field] : [])).map(f =>
+      `<div class="inline-field"><b>${esc(f.label)}</b>
+        <input type="text" data-u="${eq.id}_${f.key}" autocomplete="off"></div>`).join("");
+    root.appendChild(el(`<div class="eq">
+      <div class="name">${esc(eq.name)}</div>
+      ${eq.sub ? `<div class="sub">${esc(eq.sub)}</div>` : ""}
+      <div class="checks">${checks}</div>
+      ${fields}
+      <div class="comment"><input type="text" data-u="${eq.id}_comment" placeholder="Comments" autocomplete="off"></div>
+    </div>`));
+  });
+}
+renderUEquipment(UTIL_VEHICLE, "uVehicle");
+const USPARE_KEY = "u4454_spare_last";
+(() => { const row = document.querySelector('#uVehicle [data-u="spare_c0"]').closest(".eq");
+  row.insertBefore(el(`<div class="f7stat" id="uSpareStat"></div>`), row.querySelector(".comment")); })();
+function renderSpare(){
+  let last = null; try { last = localStorage.getItem(USPARE_KEY); } catch(e){}
+  const st = document.getElementById("uSpareStat"), cur = localToday().slice(0,7);
+  const done = last && last.slice(0,7) === cur;
+  st.textContent = done ? "\u2713 Done for " + monthName(cur) + " (" + logFmtDate(last) + ")"
+                        : "DUE this month" + (last ? " \u2014 last checked " + logFmtDate(last) : "");
+  st.classList.toggle("ok", !!done);
+}
+renderUEquipment(UTIL_EQUIPMENT, "uEquipment");
+
+const uAddlRoot = document.getElementById("uAddl");
+for (let i = 1; i <= 4; i++) {
+  uAddlRoot.appendChild(el(`<div class="addl">
+    <input type="text" data-u="addl${i}_name" placeholder="Equipment" autocomplete="off">
+    <input type="text" data-u="addl${i}_notes" placeholder="Checks / comments" autocomplete="off">
+  </div>`));
+}
+
+const uInputs = () => document.querySelectorAll("[data-u]");
+function saveUDraft(){
+  const d = {};
+  uInputs().forEach(i => { d[i.dataset.u] = i.type === "checkbox" ? i.checked : i.value; });
+  try { localStorage.setItem(UTIL_DRAFT_KEY, JSON.stringify(d)); } catch(e){}
+  document.getElementById("udraftnote").textContent = "Draft saved on this iPad " + new Date().toLocaleTimeString();
+}
+function loadUDraft(){
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(UTIL_DRAFT_KEY) || "null"); } catch(e){}
+  if (!d) return;
+  uInputs().forEach(i => {
+    if (!(i.dataset.u in d)) return;
+    if (i.type === "checkbox") i.checked = !!d[i.dataset.u];
+    else i.value = d[i.dataset.u];
+  });
+}
+function setUTitle(){
+  const d = document.getElementById("u_date").value || localToday();
+  document.title = "U4454_Weekly_Checkout_" + d;
+}
+// ---- weekly due tracker: saving the PDF marks that date as the last weekly checkout ----
+const ULAST_KEY = "u4454_last_weekly_checkout";
+function markUDone(){
+  const d = document.getElementById("u_date").value || localToday();
+  let prev = null; try { prev = localStorage.getItem(ULAST_KEY); } catch(e){}
+  if (!prev || d > prev) { try { localStorage.setItem(ULAST_KEY, d); } catch(e){} }
+  if (document.querySelector('[data-u="spare_c0"]').checked) {
+    let sp = null; try { sp = localStorage.getItem(USPARE_KEY); } catch(e){}
+    if (!sp || d > sp) { try { localStorage.setItem(USPARE_KEY, d); } catch(e){} }
+  }
+  renderUDue(); renderSpare();
+}
+function renderUDue(){
+  const box = document.getElementById("uDue");
+  let last = null; try { last = localStorage.getItem(ULAST_KEY); } catch(e){}
+  if (!last) { box.textContent = "Weekly checkout — no checkout saved on this iPad yet"; box.classList.add("due"); return; }
+  const [y,m,dd] = last.split("-").map(Number);
+  const next = new Date(y, m-1, dd + 7);
+  const nextIso = next.getFullYear() + "-" + String(next.getMonth()+1).padStart(2,"0") + "-" + String(next.getDate()).padStart(2,"0");
+  const due = localToday() >= nextIso;
+  box.textContent = "Last weekly checkout: " + logFmtDate(last) + " • " +
+    (due ? "DUE NOW (was due " + logFmtDate(nextIso) + ")" : "next due " + logFmtDate(nextIso));
+  box.classList.toggle("due", due);
+}
+function resetUForm(){
+  uInputs().forEach(i => { if (i.type === "checkbox") i.checked = false; else i.value = ""; });
+  try { localStorage.removeItem(UTIL_DRAFT_KEY); } catch(e){}
+  document.getElementById("u_date").value = localToday();
+  document.getElementById("udraftnote").textContent = "";
+  checkStale();
+}
+function clearUForm(){
+  if (!confirm("Clear the utility checkout sheet? This removes its saved draft on this iPad.")) return;
+  resetUForm();
+}
+document.addEventListener("input", e => { if (e.target.dataset && e.target.dataset.u) saveUDraft(); });
+document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.u) saveUDraft(); });
+loadUDraft();
+if (!document.getElementById("u_date").value) document.getElementById("u_date").value = localToday();
+renderUDue();
+renderSpare();
+checkStale();
+
+// ---- Utility sub-tabs ----
+const uSubSheet = document.getElementById("usub-sheet"), uSubInv = document.getElementById("usub-inv");
+function showUSub(name){
+  document.body.classList.toggle("usub-inv", name === "inv");
+  uSubSheet.classList.toggle("active", name === "sheet");
+  uSubInv.classList.toggle("active", name === "inv");
+  window.scrollTo(0,0);
+}
+uSubSheet.addEventListener("click", () => showUSub("sheet"));
+uSubInv.addEventListener("click", () => showUSub("inv"));
+
+// ---- Utility compartment inventory ----
+// Each compartment: items [qty, name], optional photos, optional bags (nested kits).
+// A bag lists its contents in cats: [{ name, items:[[qty, name, {exp:"YYYY-MM"}?], ...] }].
+const UTIL_COMPARTMENTS = [
+  { id:"back_seat", name:"Back Seat",
+    items:[
+      [1,"Medical line pack"]
+    ],
+    bags:[
+      { id:"medline", name:"Medical Line Pack",
+        photos:[{ f:"IMG_9884.jpeg" }],
+        cats:[
+          { name:"Airway & Breathing", items:[
+            [3,"NPA (nasopharyngeal airway)"],
+            [3,"OPA (oropharyngeal airway), assorted sizes"],
+            [3,"Lubricating jelly packets"],
+            [1,"Ambu Res-Cue CPR mask"]
+          ]},
+          { name:"Medications", items:[
+            [1,"EpiPen 0.3mg (adult epinephrine auto-injector)", { exp: EXP.epi }],
+            [1,"Glutose 15 oral glucose gel"]
+          ]},
+          { name:"Bleeding Control & Trauma", items:[
+            [1,"CAT tourniquet"],
+            [1,"QuikClot Combat Gauze"],
+            [1,"6\" Emergency bandage (Israeli)"],
+            [1,"SAM splint 36\""],
+            [1,"Trauma shears"]
+          ]},
+          { name:"Wound Care & Bandaging", items:[
+            [4,"4\"x4\" gauze sponges (2 per pack)"],
+            [2,"Kerlix bandage roll 4.5\""],
+            [2,"Elastic bandage (Dukal)"],
+            [1,"Self-adherent wrap"],
+            [1,"Triangular bandage"],
+            [1,"Medical tape"]
+          ]},
+          { name:"PPE & Cleaning", items:[
+            [1,"Nitrile exam gloves (L), pair"],
+            [3,"Hero Wipes EMS"]
+          ]},
+          { name:"Comfort & Environmental", items:[
+            [4,"Instant cold pack 6\"x8\""],
+            [1,"Emergency survival blanket"]
+          ]},
+          { name:"Patient Movement & Spares", items:[
+            [1,"Emergency tarp carry-all"],
+            [2,"Spare buckles"]
+          ]}
+        ] }
+    ] },
+  { id:"pass_rear_door", name:"Passenger Rear Door",
+    photos:[{ f:"util_pass_rear_door.jpg" }],
+    items:[
+      [1,"Bag of fusees"]
+    ] },
+  { id:"bed_slideout", name:"Slide-Out Bed",
+    note:"Husqvarna 365 is labeled “Leaky bar oil — add before use.” The tote is its own compartment below.",
+    photos:[{ f:"util_bed_slideout.jpg" }],
+    items:[
+      [1,"Cooler"],
+      [2,"Rogue hoes"],
+      [1,"McLeod"],
+      [1,"Back pump"],
+      [1,"Husqvarna 365 chainsaw"]
+    ] },
+  { id:"bed_tote", name:"Slide-Out Bed — Tote",
+    note:"5 falling wedges total: 2 loose + 3 in the leather wedge holder.",
+    photos:[{ f:"util_bed_tote.jpg" }],
+    items:[
+      [4,"Gallons of chainsaw premix"],
+      [1,"Gallon of bar oil"],
+      [1,"Saw bag"],
+      [2,"Falling wedges (loose)"],
+      [1,"Leather wedge holder with 3 falling wedges"]
+    ],
+    bags:[
+      { id:"sawbag", name:"Saw Bag",
+        cats:[
+          { name:"Chaps", items:[
+            [1,"32\" chaps"],
+            [1,"Pocket wedge (in chaps)"],
+            [1,"Scrench (in chaps)"],
+            [1,"CAT tourniquet (in chaps)"]
+          ]},
+          { name:"Wedges", items:[
+            [5,"8\" wedges"],
+            [2,"Pocket wedges"]
+          ]},
+          { name:"Spares", items:[
+            [1,"Spare 24\" chain"],
+            [1,"Zip-lock bag: spare air filter, safety glasses, spare drive sprocket"]
+          ]},
+          { name:"Fuel & Oil", items:[
+            [1,"Fuel bottle"],
+            [1,"Bar oil bottle"]
+          ]}
+        ] }
+    ] },
+  { id:"pass_bed_lid", name:"Passenger Side Bed Lid Compartment",
+    photos:[{ f:"util_pass_bed_lid.jpg" }],
+    items:[
+      [1,"Medical pack"],
+      [1,"Traction splint device (Optimum Traction Device)"],
+      [1,"Bag of large medical gloves"],
+      [1,"Bag of medium medical gloves"]
+    ],
+    bags:[
+      { id:"medpack", name:"Medical Pack",
+        note:"Record the O2 bottle PSI on the Utility checkout sheet.",
+        cats:[
+          { name:"Airway & Breathing", items:[
+            [1,"Oxygen bottle"],
+            [2,"Adult non-rebreather mask"],
+            [2,"Pedi non-rebreather mask"],
+            [2,"Adult nasal cannula"],
+            [2,"Pedi nasal cannula"],
+            [1,"Adult bag valve mask"],
+            [1,"Pedi bag valve mask"],
+            [1,"Infant bag valve mask"],
+            [1,"NPA kit"],
+            [1,"OPA kit"],
+            [1,"Manual suction"]
+          ]},
+          { name:"Medications", items:[
+            [1,"Adult EpiPen", { exp: EXP.mpAdultEpi }],
+            [1,"Pedi EpiPen", { exp: EXP.mpPediEpi }],
+            [1,"Oral glucose gel (strawberry)"]
+          ]},
+          { name:"Assessment", items:[
+            [1,"Thermometer + box of sheaths"],
+            [1,"Glucose monitor kit"],
+            [1,"Eye (pen) flashlight"],
+            [2,"Pairs of spare stethoscope earpieces"]
+          ]},
+          { name:"Bleeding Control & Trauma", items:[
+            [2,"CAT tourniquet"],
+            [4,"Combat gauze"],
+            [2,"Chest seal"],
+            [2,"SAM splint"],
+            [2,"Medical shears"]
+          ]},
+          { name:"Wound Care & Bandaging", items:[
+            [2,"Stretch bandage 3\"x75\""],
+            [3,"Bandage 5\"x9\""],
+            [4,"Bandage 4\"x4\""],
+            [2,"Roll of Coban wrap"],
+            [1,"Compression wrap"],
+            [2,"Triangle wrap"],
+            [1,"Roll of medical tape"],
+            [2,"Sterile water 250 mL", { exp: EXP.mpWater }],
+            [1,"Bottle of eye wash", { exp: EXP.mpEyeWash }]
+          ]},
+          { name:"PPE & Infection Control", items:[
+            [4,"Pairs of nitrile gloves"],
+            [2,"N95 mask"],
+            [1,"Medical gown"],
+            [1,"Pair of boot covers"],
+            [1,"Sharps container"],
+            [2,"Biohazard bag"]
+          ]},
+          { name:"Comfort & Environmental", items:[
+            [2,"Cold pack"],
+            [2,"Hot pack"],
+            [2,"Emergency foil blanket"],
+            [2,"Vomit bag"]
+          ]},
+          { name:"Triage", items:[
+            [4,"Triage tags"]
+          ]}
+        ] }
+    ] },
+  { id:"driver_rear_door", name:"Driver Side Rear Door",
+    photos:[{ f:"util_driver_rear_door.jpg" }],
+    items:[
+      [1,"Kestrel weather meter"],
+      [1,"Sling psychrometer kit"]
+    ] },
+  { id:"under_rear_seat", name:"Under Rear Seat",
+    photos:[{ f:"util_under_rear_seat.jpg" }],
+    items:[
+      [1,"Fire extinguisher"],
+      [1,"Roll of shop towels"],
+      [1,"Can of window cleaner"],
+      [1,"Roll of toilet paper"],
+      [1,"Milwaukee blower"],
+      [1,"Milwaukee battery"],
+      [1,"Milwaukee battery charger"]
+    ] },
+  { id:"driver_bed_lid", name:"Driver Side Bed Lid Compartment",
+    photos:[{ f:"util_driver_bed_lid.jpg" }],
+    items:[
+      [1,"Burn kit", { exp: EXP.uBurnWater }],
+      [1,"Bolt cutters"],
+      [1,"Cable cutters"],
+      [1,"Roll of P-line"],
+      [1,"Tire chains"],
+      [1,"Tire chain tensioners"]
+    ],
+    bags:[
+      { id:"burnkit", name:"Burn Kit",
+        note:"Check that the sterile water and eye wash aren't punctured or leaking onto the dressings.",
+        photos:[{ f:"util_burn_kit.jpg" }],
+        cats:[
+          { name:"Burn Care", items:[
+            [2,"Burn sheet 60\"x90\", sterile, latex-free"],
+            [2,"Burn gauze pad"],
+            [2,"Water-Jel burn dressing"],
+            [2,"Sterile water 1 L", { exp: EXP.uBurnWater }],
+            [2,"Eye wash bottle"]
+          ]},
+          { name:"Dressings & Bandaging", items:[
+            [2,"Trauma dressing 12\"x30\""],
+            [2,"Combine (ABD) pad 5\"x9\""],
+            [8,"4\"x4\" sponges"],
+            [4,"Absorbent sheet"],
+            [4,"Oval eye pad"],
+            [2,"Bandage roll"],
+            [2,"Roll of medical tape"]
+          ]},
+          { name:"Tools & PPE", items:[
+            [2,"Medical shears"],
+            [1,"Pair of latex gloves"]
+          ]},
+          { name:"Warmth", items:[
+            [2,"Emergency blanket (yellow)"],
+            [2,"Dukal heat-reflective survival wrap"],
+            [1,"Polar sheet blanket"]
+          ]}
+        ] }
+    ] },
+  { id:"driver_bed_rear", name:"Driver Side Bed Rear",
+    note:"Tucked in behind the wheel well, under the bed toolbox.",
+    photos:[{ f:"util_driver_bed_rear.jpg" }],
+    items:[
+      [1,"Tire chains (second pair)"]
+    ] },
+  { id:"front_seat", name:"Front Seat",
+    photos:[{ f:"util_front_seat.jpg" }],
+    items:[
+      [1,"Tablet Command tablet"],
+      [1,"Green book"]
+    ] },
+  { id:"glove_box", name:"Glove Box",
+    photos:[{ f:"util_glove_box.jpg" }],
+    items:[
+      [1,"Owner's manual"],
+      [1,"Emergency shift tickets"],
+      [1,"Pens & pencils"],
+      [1,"Big Trees State Park map"]
+    ] }
+];
+const bagItems = b => b.cats ? b.cats.flatMap(c => c.items) : b.items;
+const UINV_KEY = "u4454_inventory_checks_v2";
+let uInvState = {};
+try { uInvState = JSON.parse(localStorage.getItem(UINV_KEY) || "{}"); } catch(e){}
+function uInvSave(){ try { localStorage.setItem(UINV_KEY, JSON.stringify(uInvState)); } catch(e){} }
+
+function uPhotos(list, alt){
+  if (!list || !list.length) return "";
+  return `<div class="photos">` + list.map(p =>
+    `<figure><img loading="lazy" src="img/${p.f}" alt="${esc(alt)}">${p.c ? `<figcaption>${esc(p.c)}</figcaption>` : ""}</figure>`).join("") + `</div>`;
+}
+const uCompRoot = document.getElementById("uCompartments");
+UTIL_COMPARTMENTS.forEach(c => {
+  const items = c.items.map(([q,n,o],i) =>
+    `<label class="item" data-name="${esc(n.toLowerCase())}">
+       <input type="checkbox" data-uinv="${c.id}:${i}">
+       <span class="qty">${q}</span><span>${esc(n)}</span>${o && o.exp ? `<span class="exp ${expStatus(o.exp)}">${expStatus(o.exp) === "expired" ? "EXPIRED " : "Exp "}${expLabel(o.exp)}</span>` : ""}
+     </label>`).join("");
+  const bags = (c.bags || []).map(b => {
+    const row = ([q,n,o], i) => {
+      const exp = o && o.exp ? `<span class="exp ${expStatus(o.exp)}">${expStatus(o.exp) === "expired" ? "EXPIRED " : "Exp "}${expLabel(o.exp)}</span>` : tagFor(c.id + "/" + b.id + "|" + n);
+      return `<div class="bag-row">
+         <label class="item" data-name="${esc(n.toLowerCase())}">
+           <input type="checkbox" data-uinv="${c.id}/${b.id}:${i}">
+           <span class="qty">${q}</span><span>${esc(n)}</span>${exp}
+         </label>
+       </div>`;
+    };
+    let k = 0;   // running index across categories
+    const body = b.cats
+      ? b.cats.map(cat => `<div class="bag-cat-group"><div class="bag-cat">${esc(cat.name)}</div>
+          <div class="items">${cat.items.map(it => row(it, k++)).join("")}</div></div>`).join("")
+      : `<div class="items">${b.items.map(row).join("")}</div>`;
+    return `<details class="bag">
+      <summary><span>${esc(b.name)}</span><span class="prog" data-uprog="${c.id}/${b.id}"></span></summary>
+      <div class="bag-body">
+        ${b.note ? `<p class="bag-note">${esc(b.note)}</p>` : ""}
+        ${uPhotos(b.photos, b.name)}
+        ${body}
+      </div>
+    </details>`;
+  }).join("");
+  uCompRoot.appendChild(el(`<details class="comp">
+    <summary><span>${esc(c.name)}</span><span class="prog" data-uprog="${c.id}"></span></summary>
+    <div class="comp-body">
+      ${c.note ? `<p class="comp-note">${esc(c.note)}</p>` : ""}
+      ${uPhotos(c.photos, c.name)}
+      ${items ? `<div class="items">${items}</div>` : ""}
+      ${bags}
+    </div>
+  </details>`));
+});
+function uSetBadge(key, list){
+  const done = list.reduce((a,_,i) => a + (uInvState[key + ":" + i] ? 1 : 0), 0);
+  const badge = uCompRoot.querySelector(`[data-uprog="${key}"]`);
+  badge.textContent = done + " / " + list.length;
+  badge.classList.toggle("done", done === list.length);
+}
+function uUpdateAll(){
+  UTIL_COMPARTMENTS.forEach(c => {
+    uSetBadge(c.id, c.items);
+    (c.bags || []).forEach(b => uSetBadge(c.id + "/" + b.id, bagItems(b)));
+  });
+}
+uCompRoot.querySelectorAll("[data-uinv]").forEach(cb => { cb.checked = !!uInvState[cb.dataset.uinv]; });
+uUpdateAll();
+uCompRoot.addEventListener("change", e => {
+  const cb = e.target;
+  if (!cb.dataset.uinv) return;
+  uInvState[cb.dataset.uinv] = cb.checked;
+  uInvSave(); uUpdateAll();
+});
+document.getElementById("uInvReset").addEventListener("click", () => {
+  if (!confirm("Reset all utility inventory checks?")) return;
+  uInvState = {}; uInvSave();
+  uCompRoot.querySelectorAll("[data-uinv]").forEach(cb => cb.checked = false);
+  uUpdateAll();
+});
+document.getElementById("uInvSearch").addEventListener("input", e => runInvSearch(uCompRoot, e.target.value));
+uCompRoot.addEventListener("click", e => {
+  if (e.target.tagName === "IMG") { lb.querySelector("img").src = e.target.src; lb.classList.add("open"); }
+});
+</script>
+</body>
+</html>
