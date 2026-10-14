@@ -1258,6 +1258,28 @@ const MEDKITS = [
     [5,"1\" to 3/4\" adapters"],
     [4,"3/4\" brass gated wyes"],
     [6,"3/4\" brass ball valves"]
+  ]},
+  { key:"mark3", title:"Mark 3 Kit (Green Bag)", where:"rear_bottom", photo:"mark3_kit.jpg", items:[
+    [1,"Green bag"],
+    [1,"Mark-3 Quick Guide"],
+    [2,"Spanner wrenches"],
+    [2,"2\" to 1.5\" reducers"],
+    [1,"2\" strainer"],
+    [1,"Hand primer fuel line"],
+    [1,"1.5\" relief valve"],
+    [2,"Hand primers"],
+    [1,"3/4\" relief line"],
+    [1,"Rope"],
+    [1,"Crescent wrench"],
+    [1,"Spark plugs (1 for Mark 3, 1 for Honda pump)"],
+    [1,"Spark plug gap gauge"],
+    [2,"Flathead screwdrivers"],
+    [2,"Phillips screwdrivers"],
+    [1,"Ratchet with 10mm socket"],
+    [1,"Hex head wrench"],
+    [1,"Needle nose pliers"],
+    [1,"Spark plug breaker bar / extension"],
+    [4,"2-stroke oil (Stihl HP Ultra, 6.4 oz — mixes 50:1)"]
   ]}
 ];
 
@@ -1295,6 +1317,7 @@ COMPARTMENTS.forEach(c => {
       ${c.id === "cab" ? rearSeatHTML() + captSeatHTML() + passSeatHTML() : ""}
       ${c.id === "pass_medical" ? medbagHTML() + medKitsHTML("pass_medical") : ""}
       ${c.id === "right_hose" ? medKitsHTML("right_hose") : ""}
+      ${c.id === "rear_bottom" ? medKitsHTML("rear_bottom") : ""}
     </div>
   </details>`));
 });
