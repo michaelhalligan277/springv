@@ -1259,7 +1259,11 @@ const MEDKITS = [
     [4,"3/4\" brass gated wyes"],
     [6,"3/4\" brass ball valves"]
   ]},
-  { key:"mark3", title:"Mark 3 Kit (Green Bag)", where:"rear_bottom", photo:"mark3_kit.jpg", items:[
+  { key:"mark3", title:"Mark 3 Kit (Green Bag)", where:"rear_bottom", photo:"mark3_kit.jpg", links:[
+    { t:"Quick Guide (01/2015 — matches laminated copy)", u:"https://waterax.imgix.net/products/documents/MARK-3%20Quick%20Guide.pdf" },
+    { t:"Current Quick Guide (05/2026)", u:"https://waterax.imgix.net/products/documents/MARK-3-Series-Quick-Guide-EN.pdf" },
+    { t:"Full Owner’s Manual", u:"https://cdn.shopify.com/s/files/1/0856/6344/9409/files/MARK-3-Owners-Manual.pdf" }
+  ], items:[
     [1,"Green bag"],
     [1,"Mark-3 Quick Guide"],
     [2,"Spanner wrenches"],
@@ -1294,7 +1298,7 @@ function medKitsHTML(where){
        </div>`).join("");
     return `<details class="bag" id="kit_${k.key}">
       <summary><span>${esc(k.title)}</span><span class="prog" data-prog="kit_${k.key}"></span></summary>
-      <div class="bag-body">${k.photo ? `<div class="photos"><figure><img loading="lazy" src="img/${k.photo}" alt="${esc(k.title)}"></figure></div>` : ""}<div class="items">${rows}</div></div>
+      <div class="bag-body">${k.links ? `<p class="bag-note">WATERAX reference (needs signal): ${k.links.map(l => `<a href="${l.u}" target="_blank" rel="noopener">${esc(l.t)}</a>`).join(" &bull; ")}</p>` : ""}${k.photo ? `<div class="photos"><figure><img loading="lazy" src="img/${k.photo}" alt="${esc(k.title)}"></figure></div>` : ""}<div class="items">${rows}</div></div>
     </details>`;
   }).join("");
 }
