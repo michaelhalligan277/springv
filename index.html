@@ -1657,7 +1657,8 @@ function aedPrefill(){
   const hdrAed = f7Get(f7Month()).hdr.aed;
   document.getElementById("ag_serial").value = (last && last.serial) || hdrAed || "";
   // Smart Pads II, lot 260129-0954 (both sets exp 2028-07-29, read Oct 14 2026); used until a saved entry overrides
-  const AED_EXP_DEFAULT = { ap1:"2028-07", ap2:"2028-07" };
+  // Batteries (read Oct 14 2026): installed M5070A exp 2027-12-31; spare M5070A in bag exp 2030-07-31
+  const AED_EXP_DEFAULT = { ap1:"2028-07", ap2:"2028-07", bat:"2027-12", bat2:"2030-07" };
   AED_EXP.forEach(([k]) => { document.getElementById("ag_" + k).value = (last && last[k]) || AED_EXP_DEFAULT[k] || ""; });
 }
 AED_YN.forEach(([k]) => document.getElementById("ag_" + k).addEventListener("change", e =>
