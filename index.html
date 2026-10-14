@@ -705,11 +705,7 @@
       <label>Adult pads #1 exp<input type="month" id="ag_ap1"></label>
       <label>Adult pads #2 exp<input type="month" id="ag_ap2"></label>
     </div>
-    <div class="yn"><span>Two sets of pediatric pads</span><select id="ag_pedi"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
-    <div class="expgrid">
-      <label>Pedi pads #1 exp<input type="month" id="ag_pp1"></label>
-      <label>Pedi pads #2 exp<input type="month" id="ag_pp2"></label>
-    </div>
+    <div class="yn"><span>Infant/Child Key (pink) in place &mdash; used instead of pedi pads</span><select id="ag_pedi"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
     <div class="yn"><span>Scissors &amp; razor</span><select id="ag_scissors"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
     <div class="yn"><span>Two AED use forms (EMS-713)</span><select id="ag_forms"><option value="">&mdash;</option><option>YES</option><option>NO</option></select></div>
     <div class="expgrid">
@@ -826,7 +822,7 @@ const EQUIPMENT_A = [
     checks:["Battery charged","Blades","Runs"] },
 ];
 const EQUIPMENT_B = [
-  { id:"aed", name:"AED", sub:"Passenger medical compartment • Per EMS-711-2: 2 adult pads, 2 pedi pads, scissors & razor, 2 EMS-713 forms • Initial the electronic EMS-711-2 on the AED tab",
+  { id:"aed", name:"AED", sub:"Passenger medical compartment • Per EMS-711-2: 2 adult pads, Infant/Child Key (replaces pedi pads), scissors & razor, 2 EMS-713 forms • Initial the electronic EMS-711-2 on the AED tab",
     checks:["Status indicator visible & operable","Clean, no damage","Inventory present"],
     field:{ key:"incident", label:"Used on patient — Incident #:" } },
   { id:"medbag", name:"Medical bag",
@@ -1603,10 +1599,10 @@ document.getElementById("f7Table").addEventListener("click", e => {
 const AED_KEY = "e4454_aed_log_v1";
 const AED_YN = [
   ["status","Status indicator"],["clean","Clean / no damage"],["adult","2 sets adult pads"],
-  ["pedi","2 sets pedi pads"],["scissors","Scissors & razor"],["forms","2 EMS-713 forms"]
+  ["pedi","Infant/Child Key"],["scissors","Scissors & razor"],["forms","2 EMS-713 forms"]
 ];
 const AED_EXP = [
-  ["ap1","Adult pads #1"],["ap2","Adult pads #2"],["pp1","Pedi pads #1"],["pp2","Pedi pads #2"],
+  ["ap1","Adult pads #1"],["ap2","Adult pads #2"],
   ["bat","AED battery"],["bat2","Backup AED battery"]
 ];
 let aedLog = [];
@@ -1660,7 +1656,9 @@ function aedPrefill(){
   pads.ag.clear();
   const hdrAed = f7Get(f7Month()).hdr.aed;
   document.getElementById("ag_serial").value = (last && last.serial) || hdrAed || "";
-  AED_EXP.forEach(([k]) => { document.getElementById("ag_" + k).value = (last && last[k]) || ""; });
+  // Smart Pads II, lot 260129-0954 (both sets exp 2028-07-29, read Oct 14 2026); used until a saved entry overrides
+  const AED_EXP_DEFAULT = { ap1:"2028-07", ap2:"2028-07" };
+  AED_EXP.forEach(([k]) => { document.getElementById("ag_" + k).value = (last && last[k]) || AED_EXP_DEFAULT[k] || ""; });
 }
 AED_YN.forEach(([k]) => document.getElementById("ag_" + k).addEventListener("change", e =>
   e.target.classList.toggle("no", e.target.value === "NO")));
@@ -1744,7 +1742,7 @@ function f7PrintHTML(ym){
       <tr><td></td><td style="text-align:right">Clean and no damage noted</td>${yn("clean")}<td></td></tr>
       <tr><td></td><th style="text-align:left">2. INVENTORY:</th><td></td><td></td><td></td></tr>
       <tr><td></td><td style="text-align:right">Two sets of adult pads</td>${yn("adult")}<td>1-Exp. date: ${ex("ap1")}<br>2-Exp. date: ${ex("ap2")}</td></tr>
-      <tr><td></td><td style="text-align:right">Two sets of pediatric pads</td>${yn("pedi")}<td>1-Exp. date: ${ex("pp1")}<br>2-Exp. date: ${ex("pp2")}</td></tr>
+      <tr><td></td><td style="text-align:right">Pediatric pads &mdash; Infant/Child Key in place of pads</td>${yn("pedi")}<td>No pedi pads; key has no exp. date</td></tr>
       <tr><td></td><td style="text-align:right">Scissors &amp; Razor</td>${yn("scissors")}<td></td></tr>
       <tr><td></td><td style="text-align:right">Two AED use forms (EMS-713)</td>${yn("forms")}<td></td></tr>
       <tr><td></td><td style="text-align:right">AED battery</td><td></td><td></td><td>Exp. date: ${ex("bat")}</td></tr>
