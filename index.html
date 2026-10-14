@@ -1136,7 +1136,7 @@ function rearSeatHTML(){
 }
 
 const CAPTSEAT = [
-  { name:"Under Captains Seat", photo:"IMG_9753.jpeg", items:[
+  { name:"Under Captains Seat", photo:"IMG_9753.jpeg", more:[{f:"firing_pistol.jpg",c:"Firing pistol, case and loads"},{f:"firing_pistol_loads.jpg",c:"Powers .22 loads (cat. no. 50520)"}], items:[
     [1,"Very pistol"],
     [1,"DeWalt box with tire valves and Schrader valve tool"],
     [2,"Chimney fire extinguishers"],
@@ -1173,7 +1173,7 @@ function captSeatHTML(){
        </div>`).join("");
     return `<div class="bag-cat-group">
       <div class="bag-cat">${esc(g.name)}</div>
-      <div class="photos"><figure><img loading="lazy" src="img/${g.photo}" alt="${esc(g.name)}"></figure></div>
+      <div class="photos"><figure><img loading="lazy" src="img/${g.photo}" alt="${esc(g.name)}"></figure>${(g.more||[]).map(p => `<figure><img loading="lazy" src="img/${p.f}" alt="${esc(p.c)}"><figcaption>${esc(p.c)}</figcaption></figure>`).join("")}</div>
       <div class="items">${rows}</div>
     </div>`;
   }).join("");
