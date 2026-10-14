@@ -1211,16 +1211,20 @@ function passSeatHTML(){
 }
 
 const MEDKITS = [
-  { key:"spine", title:"Spine Kit", items:[
+  { key:"spine", title:"Spine Kit", photo:"spine_kit.jpg", items:[
     [1,"1000 mL Sterile Solution"],
+    [3,"Ambu Perfit ACE C-Collars (Adult)"],
+    [2,"Sta-Blok Head Beds"],
+    [1,"Pediatric Head Restraint"],
+    [1,"Baby Head Restraint"],
+    [1,"Optimum Traction Device"],
+    [1,"Adtemp 413 Digital Thermometer (100 sheaths)"],
     [1,"Triage Tags"],
-    [1,"Thermometer"],
-    [2,"Spinal Immobilization Board Straps"],
-    [1,"OBG Kit"],
-    [1,"Zip Ties"],
-    [2,"Head Stabilizers"],
-    [1,"Traction Splint Device"],
-    [5,"C-Spine Collars"]
+    [2,"SAM Splints"],
+    [1,"Permanent Marker"],
+    [1,"Emergency OB Kit"],
+    [1,"Zip Ties (bag)"],
+    [2,"Spider Straps"]
   ]},
   { key:"burn", title:"Burn Kit", items:[
     [2,"1000 mL Sterile Solution"],
@@ -1252,7 +1256,7 @@ function medKitsHTML(){
        </div>`).join("");
     return `<details class="bag" id="kit_${k.key}">
       <summary><span>${esc(k.title)}</span><span class="prog" data-prog="kit_${k.key}"></span></summary>
-      <div class="bag-body"><div class="items">${rows}</div></div>
+      <div class="bag-body">${k.photo ? `<div class="photos"><figure><img loading="lazy" src="img/${k.photo}" alt="${esc(k.title)}"></figure></div>` : ""}<div class="items">${rows}</div></div>
     </details>`;
   }).join("");
 }
