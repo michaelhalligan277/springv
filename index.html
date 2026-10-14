@@ -1248,11 +1248,21 @@ const MEDKITS = [
     [1,"S-Scort Jr. QuickDraw suction unit"],
     [10,"AAA batteries"],
     [1,"Suction hose"]
+  ]},
+  { key:"mopup", title:"Mop-Up Kit", where:"right_hose", photo:"mopup_kit.jpg", items:[
+    [10,"3/4\" nozzles"],
+    [10,"Sticks of P-line"],
+    [3,"1\" metal KK nozzles"],
+    [1,"1 1/2\" double male adapter (1 1/2\" to 1 1/2\")"],
+    [4,"1 1/2\" to 1\" adapters"],
+    [5,"1\" to 3/4\" adapters"],
+    [4,"3/4\" brass gated wyes"],
+    [6,"3/4\" brass ball valves"]
   ]}
 ];
 
-function medKitsHTML(){
-  return MEDKITS.map(k => {
+function medKitsHTML(where){
+  return MEDKITS.filter(k => (k.where || "pass_medical") === where).map(k => {
     const rows = k.items.map(([q,n],i) =>
       `<div class="bag-row">
          <label class="item" data-name="${esc(n.toLowerCase())}">
@@ -1283,7 +1293,8 @@ COMPARTMENTS.forEach(c => {
       <div class="photos">${photos}</div>
       <div class="items">${items}</div>
       ${c.id === "cab" ? rearSeatHTML() + captSeatHTML() + passSeatHTML() : ""}
-      ${c.id === "pass_medical" ? medbagHTML() + medKitsHTML() : ""}
+      ${c.id === "pass_medical" ? medbagHTML() + medKitsHTML("pass_medical") : ""}
+      ${c.id === "right_hose" ? medKitsHTML("right_hose") : ""}
     </div>
   </details>`));
 });
