@@ -321,11 +321,34 @@
   .log-entry img.sig{height:26px; vertical-align:middle;}
 
   /* electronic EMS-711-2 */
-  .f7hdr{display:grid; grid-template-columns:.8fr 1.4fr 1.4fr .8fr .8fr; gap:10px;}
-  .f7hdr label{display:block; font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.4px;}
-  .f7hdr input{width:100%; font-size:15px; padding:8px 9px; border:1px solid var(--line);
+  .f7hdr{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px;}
+  .f7hdr label{display:flex; flex-direction:column; justify-content:flex-end; min-width:0;
+    font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.4px;}
+  .f7hdr label:nth-child(-n+3){grid-column:span 2;}
+  .f7hdr label:nth-child(n+4){grid-column:span 3;}
+  .f7hdr input{width:100%; min-width:0; font-size:15px; padding:8px 9px; border:1px solid var(--line);
     font-family:inherit; margin-top:3px; background:#fff;}
-  @media (max-width:760px){ .f7hdr{grid-template-columns:1fr 1fr;} }
+  @media (max-width:760px){ .f7hdr{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .f7hdr label:nth-child(n){grid-column:span 1;}
+    .f7hdr label:nth-child(2), .f7hdr label:nth-child(3){grid-column:1 / -1;} }
+
+  /* AED tab: stop iPad Safari date/month/select controls from overflowing their grid cells */
+  #view-aed .log-grid, #view-aed .expgrid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  #view-aed .expgrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #view-aed .log-grid label, #view-aed .expgrid label{display:flex; flex-direction:column;
+    justify-content:flex-end; min-width:0;}
+  #view-aed input, #view-aed select{min-width:0; max-width:100%; height:42px;
+    -webkit-appearance:none; appearance:none; border-radius:0;}
+  #view-aed select{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23666' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 10px center; padding-right:30px;}
+  #view-aed .yn select{height:auto; min-height:36px;}
+  #view-aed input[type=date], #view-aed input[type=month]{display:block; text-align:left;}
+  #view-aed input::-webkit-date-and-time-value{text-align:left; min-height:1.2em;}
+  @media (max-width:560px){
+    #view-aed .log-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    #view-aed .log-grid label:first-child{grid-column:auto;}
+    #view-aed .log-grid label:nth-child(3){grid-column:1 / -1;}
+    #view-aed .expgrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
   .padlab{display:flex; justify-content:space-between; align-items:center; margin-top:10px;
     font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.4px;}
   .padclear{font-family:inherit; font-size:12px; font-weight:bold; border:1px solid var(--line);
