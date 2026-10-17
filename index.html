@@ -888,7 +888,7 @@ function tagFor(key){
 
 // ---------- render ----------
 function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstChild; }
-function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
 
 function renderEquipment(list, rootId){
   const root = document.getElementById(rootId);
@@ -1004,6 +1004,8 @@ loadDraft();
 if (!document.getElementById("f_date").value)
   document.getElementById("f_date").value = localToday();
 setTitle();
+// Ask the browser not to evict saved drafts/logs when storage is tight (harmless if unsupported).
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
 
 // ================= inventory =================
 const COMPARTMENTS = [{"id":"front_bumper","name":"Front Bumper","items":[[1,"100ft 1 3/4\" + KK thunder nozzle selectable gal."],[1,"25ft 1 1/2\" mobile line + 1 1/2\" bale + 1 1/2\" HEN Blade 45-t nozzle"],[1,"20ft 1 1/2\" Fill line"],[1,"15ft 3\" Fill line"],[1,"20ft Tow chain"],[2,"8\" Bolt cutters"],[1,"Fence cutters"],[1,"First out roll + 1 1/2\" bale + 3/8\" tip"],[1,"Foldable bolt cutters"],[2,"Spare starter mobile line"]],"photos":[{"f":"front_bumper_line2.jpg"},{"f":"IMG_9305.jpg"},{"f":"IMG_9307.jpg"}]},{"id":"cab","name":"Cab","items":[[5,"AA batteries boxes"],[5,"AAA batteries"],[1,"Air hose"],[3,"Bag of medical gloves"],[1,"Belt weather kit"],[1,"Binoculars"],[1,"Checkout binder"],[4,"Clam shells"],[1,"Cleancide wipes"],[1,"Cleaning supply crate + Toiletries"],[1,"Empty packsack"],[1,"Fire extinguisher"],[1,"Fire operations hand book"],[6,"Flagging"],[1,"Flashlight"],[1,"Garmin GPS"],[1,"Gravity sock"],[3,"Highway warning triangle kit"],[1,"Holmatro charger"],[1,"Ice chest"],[1,"Ice chest hose"],[1,"iPad + iPad charger"],[1,"Jetboil"],[1,"Kestrel"],[1,"Lock tag out bag"],[1,"Medical line pack"],[1,"Milwaukee blower"],[1,"Noco boost charger"],[1,"Quad map + Slim Jim"],[2,"Reflective vest"],[1,"Skull key rings"],[1,"Statewide radio call plan binder"],[1,"Water hose"],[1,"Wipes"],[1,"WUI bag"],[1,"7000 Manual"]],"note":"Includes storage underneath the driver's seat, passenger's seat, and backseat.","photos":[{"f":"IMG_9339.jpg"}]},{"id":"dog_house","name":"Dog House","items":[[14,"Arnold detailed maps"],[1,"Binder Calaveras county zone haven/Evac zones"],[1,"Binder statewide radio channel plan"],[1,"Calaveras street index"],[1,"CAL FIRE E4454 ABH agreements"],[1,"Case of fuses for the engine"],[1,"Emergency shift ticket booklet"],[1,"ERG"],[1,"Field operations guide ICS 420-1"],[15,"Fire road signs"],[24,"Fireline 315"],[1,"Fireline Handbook"],[25,"Green warrants"],[19,"ICS 201"],[4,"ICS 214"],[2,"Incident performance"],[2,"IPP 2's"],[2,"IPP6"],[4,"LE 66's"],[7,"Meal sign up"],[15,"Mini memos"],[50,"New LE38"],[1,"NWCG fireline handbook appendix B fire behavior"],[2,"Personnel & equipment report"],[2,"Plastic 4x4 sheet"],[1,"Radio user manuals"],[1,"Satellite phone + charger"],[12,"Skull Creek IA maps"],[1,"Stanislaus county road atlas"],[2,"STD 204"],[4,"STD 269"],[6,"STD 270"],[10,"Workers comp doc"]],"photos":[{"f":"IMG_9336.jpg"}]},{"id":"driver_middle","name":"Driver Side Middle Compartment","items":[[1,"32\" Chainsaw bar"],[2,"Chaps + 2 wedges + 1 scrench + tourniquet"],[1,"Dolmar"],[1,"Flat head axe"],[1,"Fiber tape"],[3,"Hand files"],[1,"Husqvarna Saw 365"],[1,"Husqvarna Saw T435"],[1,"Monkey paw"],[1,"Fireman axe"],[2,"Plaski"],[1,"Pole saw + extension"],[1,"Rhino"],[3,"Rogue hoe"],[1,"Saw bag"],[1,"Shovel"],[5,"Wedges (3 12\" and 2 5\")"]],"photos":[{"f":"IMG_9324.jpg"}]},{"id":"crosslay","name":"Lightning Load / Crosslay","items":[[1,"200' 1 1/2\" bail w/ 3/8\" tip"],[1,"200' with Akron 7/8 tip diameter structure hose 1 3/4\""]],"photos":[{"f":"IMG_9340.jpg","c":"Crosslay — passenger side"},{"f":"IMG_9341.jpg","c":"Crosslay — driver side"}]},{"id":"reel","name":"Driver Side Reel Line","items":[[1,"150' Reel line"],[1,"HEN Blade 20-t nozzle + bale"]],"photos":[{"f":"IMG_9327.jpg"}]},{"id":"bp_driver","name":"Driver Side Back Pump","items":[[1,"Back pump, 5 gallons"]],"photos":[{"f":"IMG_9326.jpg"}]},{"id":"bp_pass","name":"Passenger Side Back Pump","items":[[1,"Back pump"]],"photos":[{"f":"IMG_9345.jpg"}]},{"id":"torp_driver","name":"Torpedo Compartment — Driver Side","items":[[2,"Spare SCBA bottle"]],"photos":[{"f":"IMG_9325.jpg"}]},{"id":"torp_pass","name":"Torpedo Compartment — Passenger Side","items":[[2,"Spare SCBA bottle"]],"photos":[{"f":"IMG_9311.jpg"}]},{"id":"captains","name":"Captains Compartment","items":[[1,"Double female 4.5\" to 4\" reducer"],[1,"Double female 4\" to 3\" reducer"],[1,"Holmatro battery"],[2,"Milwaukee battery"],[1,"Milwaukee LED search light"],[1,"Neon vest"],[1,"Scotts pack"],[1,"TIC (thermal imaging camera) — attached to Scotts pack"]],"photos":[{"f":"IMG_9342.jpg"}]},{"id":"bottom_pass","name":"Bottom Passenger Compartment","items":[[1,"Bag of zip ties"],[1,"Bottle jack + lever extension"],[1,"Engine belt"],[2,"Wheel chocks"],[1,"Wiper blade"]],"note":"Crew bunker gear is stored in this compartment.","photos":[{"f":"IMG_9343.jpg"},{"f":"IMG_9344.jpg"}]},{"id":"pass_front","name":"Passenger Front Compartment","items":[[1,"E-tool (Holmatro)"],[10,"Fusees"],[1,"Sledge hammer"]],"photos":[{"f":"IMG_9309.jpg"}]},{"id":"pass_middle","name":"Passenger Middle Compartment","items":[[4,"12\" Sawzall blades"],[1,"6\" Sawzall blade"],[2,"8\" Sawzall blades"],[1,"Bolt cutters"],[1,"Flat head axe (married with the halogen + wedge)"],[1,"Milwaukee battery + Milwaukee battery charger"],[1,"Milwaukee circular saw"],[1,"Overhaul tarp"],[1,"Sawzall"],[3,"Scotts pack with SCBA bottles"]],"photos":[{"f":"IMG_9310.jpg"}]},{"id":"pass_medical","name":"Passenger Medical Compartment","items":[[1,"AED + Shears + Face mask + AED pads + Razor"],[1,"Axle for stokes basket"],[1,"Battery suction"],[1,"Burn kit"],[1,"Carryall tarp"],[1,"Cool can"],[1,"Box of Drip Drop / electrolytes"],[6,"Hockey puck emergency lights"],[2,"Isolation kit"],[1,"Medical bag"],[3,"N95 mask"],[5,"PCR + AED pads"],[1,"Spare oxygen D cylinder"],[1,"Decontamination kit"],[1,"MCI flagging kit"],[1,"Spinal kit"],[2,"Stop/Slow signs"],[2,"Stuffed animals"]],"photos":[{"f":"IMG_9313.jpg"}]},{"id":"right_hose","name":"Right Hose Bed","items":[[1,"200ft 1 3/4\" structure hose with Elkhart nozzle"],[1,"Back board"],[2,"Case of Body Armor"],[2,"Case of bottled waters"],[1,"Firing kit"],[1,"Husqvarna Saw 372"],[1,"Log roller"],[1,"Mop-up kit"],[2,"Snow chains"],[1,"Tool box"],[1,"Water rescue gear bag"],[1,"Wooden hose roller"],[1,"Choker chain + two ratchet straps"],[1,"Coolant container"],[1,"Tow kit (blue bag)"]],"photos":[{"f":"IMG_9316.jpg","c":"Without OOC bags"},{"f":"IMG_9317.jpg","c":"With OOC bags"},{"f":"IMG_9318.jpg","c":"Front of bed"}]},{"id":"left_hose","name":"Left Hose Bed","items":[[1,"500ft 3\" supply line gated Siamese with hydrant pack"],[1,"Hotel pack + 2 1/2\" gated wye with 100' 1 3/4\" bundle + combi nozzle"],[1,"Stokes basket"],[2,"Water rescue gear bag"],[1,"Choker cable"],[1,"Utility rope"],[12,"MRE's"]],"photos":[{"f":"IMG_9319.jpg","c":"Rear view"},{"f":"IMG_9320.jpg","c":"Top-down view"}]},{"id":"top_middle","name":"Top Middle Compartment","items":[[3,"1/2\" Suction hose with 2\" strainer"],[1,"20ft ladder"],[3,"Hard suction hose with 4\" strainer"],[1,"NY hook"],[1,"Rock bar"],[1,"Rubbish hook"]],"photos":[{"f":"IMG_9346.jpg"}]},{"id":"rear_bottom","name":"Rear Bottom Compartment","items":[[1,"50:1 gas tank"],[2,"Drip torches"],[2,"First out rolls + 1 1/2\" bale + 3/8\" tip"],[1,"Gas can"],[1,"Gated wye"],[1,"Honda pump"],[8,"Hose packs: (2) 1 1/2\" hose & (1) 1\" hose + KK nozzle"],[1,"Combination nozzle"],[1,"Mark 3 carry out bag"],[1,"Mark 3 pump"],[2,"Stokes basket wheels"],[2,"WUI hooks"]],"photos":[{"f":"IMG_9314.jpg"}]},{"id":"brass","name":"Brass Box","items":[[7,"1 1/2\" Bales"],[3,"1 1/2\" DBL female"],[3,"1 1/2\" DBL female"],[1,"1 1/2\" Ejector x1 1 1/2\" cap"],[1,"1 1/2\" Elbow"],[2,"1 1/2\" Gizmos"],[1,"1 1/2\" Strainer"],[7,"1 1/2\" to 1\" reducers"],[2,"1 1/2\" to 2 1/2\" increaser"],[7,"1 1/2\" T's"],[1,"1 1/2\", 1 1/2\" smooth bore tip"],[2,"1 1/2\", 1/2\" smooth bore tip"],[1,"1 1/2\", 5/8 tip"],[1,"1\" 3/16 tip x 1 1\" 1/4 tip"],[2,"1\" Bales"],[1,"1\" Cap"],[2,"1\" DBL female"],[1,"1\" DBL male"],[10,"1\" KK nozzles"],[1,"1\" to 1 1/2\" increaser"],[1,"1\" to 1\" national hose to pipe thread adapter"],[3,"1\" to 3/4\" reducer"],[2,"1\" 1 1/2\" sticks"],[3,"1\", 3/8\" tips"],[2,"2 1/2\" Caps"],[2,"2 1/2\" DBL female"],[1,"2 1/2\" DBL male"],[1,"2 1/2 Thunder fog combi selectable gal. nozzle"],[3,"2 1/2 to 1 1/2 reducer"],[1,"2 1/2\" to 2\" reducer"],[11,"3/4\" Nozzles"],[2,"3/4\" Shutoffs"],[1,"3/4 Wye"],[2,"4\" to 2.5\" reducer"],[2,"50\" 3/4\" sticks"],[1,"Bung wrench"],[1,"Dawn dish soap"],[1,"Foam canister fill hose"],[1,"Hose clamp"],[1,"Hose rubber bag"],[1,"Hydrant wrench"],[3,"KK 1 1/2\" nozzles"],[1,"Mobile line"],[1,"Pipe wrench"],[2,"Pliers"],[1,"Rubber mallet"],[7,"Spanner wrenches"],[1,"1 1/2\", 3/8\" tip"],[1,"1\", 3/8\" tip"]],"photos":[{"f":"IMG_9323.jpg"}]}];
@@ -1130,7 +1132,7 @@ function rearSeatHTML(){
     <summary><span>Rear Seat Inventory</span><span class="prog" data-prog="rseat"></span></summary>
     <div class="bag-body">
       <p class="bag-note">Vehicle care kit is the basket filled with various supplies.</p>
-      <div class="photos"><figure><img loading="lazy" src="img/IMG_9756.jpeg" alt="Rear seat inventory"></figure></div>
+      <div class="photos"><figure><img loading="lazy" decoding="async" src="img/IMG_9756.jpeg" alt="Rear seat inventory"></figure></div>
       <div class="items">${rows}</div>
     </div>
   </details>`;
@@ -1175,7 +1177,7 @@ function captSeatHTML(){
        </div>`).join("");
     return `<div class="bag-cat-group">
       <div class="bag-cat">${esc(g.name)}</div>
-      <div class="photos"><figure><img loading="lazy" src="img/${g.photo}" alt="${esc(g.name)}"></figure>${(g.more||[]).map(p => `<figure><img loading="lazy" src="img/${p.f}" alt="${esc(p.c)}"><figcaption>${esc(p.c)}</figcaption></figure>`).join("")}</div>
+      <div class="photos"><figure><img loading="lazy" decoding="async" src="img/${g.photo}" alt="${esc(g.name)}"></figure>${(g.more||[]).map(p => `<figure><img loading="lazy" decoding="async" src="img/${p.f}" alt="${esc(p.c)}"><figcaption>${esc(p.c)}</figcaption></figure>`).join("")}</div>
       <div class="items">${rows}</div>
     </div>`;
   }).join("");
@@ -1206,7 +1208,7 @@ function passSeatHTML(){
   return `<details class="bag" id="passseat">
     <summary><span>Under Passenger Seat</span><span class="prog" data-prog="pseat"></span></summary>
     <div class="bag-body">
-      <div class="photos"><figure><img loading="lazy" src="img/FullSizeRender.jpeg" alt="Under passenger seat"></figure></div>
+      <div class="photos"><figure><img loading="lazy" decoding="async" src="img/FullSizeRender.jpeg" alt="Under passenger seat"></figure></div>
       <div class="items">${rows}</div>
     </div>
   </details>`;
@@ -1310,7 +1312,7 @@ function medKitsHTML(where){
        </div>`).join("");
     return `<details class="bag" id="kit_${k.key}">
       <summary><span>${esc(k.title)}</span><span class="prog" data-prog="kit_${k.key}"></span></summary>
-      <div class="bag-body">${k.links ? `<p class="bag-note">WATERAX reference (needs signal): ${k.links.map(l => `<a href="${l.u}" target="_blank" rel="noopener">${esc(l.t)}</a>`).join(" &bull; ")}</p>` : ""}${k.photo ? `<div class="photos"><figure><img loading="lazy" src="img/${k.photo}" alt="${esc(k.title)}"></figure></div>` : ""}<div class="items">${rows}</div></div>
+      <div class="bag-body">${k.links ? `<p class="bag-note">WATERAX reference (needs signal): ${k.links.map(l => `<a href="${l.u}" target="_blank" rel="noopener">${esc(l.t)}</a>`).join(" &bull; ")}</p>` : ""}${k.photo ? `<div class="photos"><figure><img loading="lazy" decoding="async" src="img/${k.photo}" alt="${esc(k.title)}"></figure></div>` : ""}<div class="items">${rows}</div></div>
     </details>`;
   }).join("");
 }
@@ -1318,7 +1320,7 @@ function medKitsHTML(where){
 const compRoot = document.getElementById("compartments");
 COMPARTMENTS.forEach(c => {
   const photos = c.photos.map(p =>
-    `<figure><img loading="lazy" src="img/${p.f}" alt="${esc(c.name)}">${p.c ? `<figcaption>${esc(p.c)}</figcaption>` : ""}</figure>`).join("");
+    `<figure><img loading="lazy" decoding="async" src="img/${p.f}" alt="${esc(c.name)}">${p.c ? `<figcaption>${esc(p.c)}</figcaption>` : ""}</figure>`).join("");
   const items = c.items.map(([q,n],i) =>
     `<label class="item" data-name="${esc(n.toLowerCase())}">
        <input type="checkbox" data-inv="${c.id}:${i}">
@@ -2343,7 +2345,7 @@ function uInvSave(){ try { localStorage.setItem(UINV_KEY, JSON.stringify(uInvSta
 function uPhotos(list, alt){
   if (!list || !list.length) return "";
   return `<div class="photos">` + list.map(p =>
-    `<figure><img loading="lazy" src="img/${p.f}" alt="${esc(alt)}">${p.c ? `<figcaption>${esc(p.c)}</figcaption>` : ""}</figure>`).join("") + `</div>`;
+    `<figure><img loading="lazy" decoding="async" src="img/${p.f}" alt="${esc(alt)}">${p.c ? `<figcaption>${esc(p.c)}</figcaption>` : ""}</figure>`).join("") + `</div>`;
 }
 const uCompRoot = document.getElementById("uCompartments");
 UTIL_COMPARTMENTS.forEach(c => {
