@@ -1,0 +1,10 @@
+{
+  "name": "springv",
+  "private": true,
+  "type": "module",
+  "description": "E4454 checkout app and Skull Creek shutdown checklist",
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0",
+    "@netlify/functions": "^3.0.0"
+  }
+}
