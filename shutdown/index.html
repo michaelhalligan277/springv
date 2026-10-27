@@ -355,7 +355,7 @@ let wx = load(K_WX, null), wxErr = "";
 const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 2 ? "just now" : m < 90 ? m + " min ago" : Math.round(m / 60) + " hr ago"; };
 
 const RAIN_STORM_IN = 0.25;  // flag any single storm that adds up to at least this much rain (inches)
-const RAIN_TOTAL_IN = 0.5;   // ...or when total forecast rainfall exceeds this much (inches)
+const RAIN_TOTAL_IN = 0.5;   // ...or when rainfall over the next 48 hours exceeds this much (inches)
 const isoHours = s => { const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?)?$/.exec(s || ""); return m ? (+m[1] || 0) * 24 + (+m[2] || 0) : 0; };
 /* NWS gives rainfall (mm) in multi-hour blocks. Spread it by the hour, then find the wettest "storm"
    (wet hours joined when less than ~7 hours apart) and the total for each of the next 7 days. */
@@ -384,7 +384,7 @@ function rainSummary(grid){
     (days[k] = days[k] || { t: h, inches: 0 }).inches += hourly.get(h);
   }
   const dl = Object.values(days).slice(0, 7);
-  return { storm: { inches: storm.inches, start: storm.start, end: storm.end + H }, days: dl, total: dl.reduce((a, d) => a + d.inches, 0) };
+  return { storm: { inches: storm.inches, start: storm.start, end: storm.end + H }, days: dl, total: hrs.reduce((a, h) => h >= Date.now() - H && h < Date.now() + 48 * H ? a + hourly.get(h) : a, 0) };
 }
 const wd = t => new Date(t).toLocaleDateString([], { weekday: "short" });
 const wdh = t => new Date(t).toLocaleString([], { weekday: "short", hour: "numeric" });
@@ -394,10 +394,10 @@ function rainHTML(r){
   const st = r.storm, tot = r.total || 0, hitStorm = st.inches >= RAIN_STORM_IN, hitTotal = tot > RAIN_TOTAL_IN, hit = hitStorm || hitTotal;
   const why = [];
   if (hitStorm) why.push('storm of about ' + st.inches.toFixed(2) + '" ' + esc(wdh(st.start)) + " to " + esc(wdh(st.end)));
-  if (hitTotal) why.push('total ' + tot.toFixed(2) + '" over the forecast');
+  if (hitTotal) why.push('total ' + tot.toFixed(2) + '" in the next 48 hours');
   const banner = hit
     ? `<div class="wx-rain hit">⚠ RAIN WATCH: ${why.join("; ")}.</div>`
-    : `<div class="wx-rain">${tot < 0.005 ? "No rain in the forecast." : "Under the watch levels. Total " + inch(tot) + ", wettest storm " + inch(st.inches) + " around " + esc(wd(st.start)) + "."}</div>`;
+    : `<div class="wx-rain">${tot < 0.005 ? "No rain in the forecast." : "Under the watch levels. Next 48 hrs: " + inch(tot) + ", wettest storm " + inch(st.inches) + " around " + esc(wd(st.start)) + "."}</div>`;
   return banner + `<div class="wx-days">${r.days.map(d => `<div class="${d.inches >= RAIN_STORM_IN ? "hit" : ""}"><b>${esc(wd(d.t))}</b>${inch(d.inches)}</div>`).join("")}</div>`;
 }
 
