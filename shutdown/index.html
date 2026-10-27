@@ -61,6 +61,12 @@
   .wx-note{padding:6px 12px; font-size:11px; color:var(--gray); border-top:1px solid #ddd;}
   .wx-btn{margin:10px 12px; font-size:14px; font-weight:bold; padding:9px 12px; border:2px solid var(--red); background:#fff; color:var(--red); font-family:inherit; cursor:pointer;}
   .wx-msg{padding:10px 12px; font-size:13px; color:var(--gray);}
+  .wx-rain{padding:9px 12px; font-size:13.5px; line-height:1.3; background:#EAF6EA; color:#1d5b1d; border-top:1px solid var(--line);}
+  .wx-rain.hit{background:var(--red); color:#fff; font-weight:bold;}
+  .wx-days{display:flex; border-top:1px solid #ddd;}
+  .wx-days div{flex:1; text-align:center; padding:6px 2px; font-size:12px; border-right:1px solid #ddd; color:var(--gray);}
+  .wx-days div:last-child{border-right:none;} .wx-days b{display:block; color:#000; font-size:11.5px;}
+  .wx-days div.hit{background:#fde0e4; color:var(--red); font-weight:bold;}
 
   .actions{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:2px solid var(--red);
            display:flex; gap:10px; padding:10px 14px calc(10px + env(safe-area-inset-bottom));}
@@ -341,6 +347,48 @@ const wxEl = document.getElementById("wx");
 let wx = load(K_WX, null), pos = load(K_POS, null), wxErr = "";
 const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 2 ? "just now" : m < 90 ? m + " min ago" : Math.round(m / 60) + " hr ago"; };
 
+const RAIN_ALERT_IN = 0.5;   // flag any storm that adds up to at least this much rain (inches)
+const isoHours = s => { const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?)?$/.exec(s || ""); return m ? (+m[1] || 0) * 24 + (+m[2] || 0) : 0; };
+/* NWS gives rainfall (mm) in multi-hour blocks. Spread it by the hour, then find the wettest "storm"
+   (wet hours joined when less than ~7 hours apart) and the total for each of the next 7 days. */
+function rainSummary(grid){
+  const q = grid && grid.properties && grid.properties.quantitativePrecipitation;
+  if (!q || !q.values || !q.values.length) return null;
+  const H = 3600000, hourly = new Map();
+  for (const v of q.values) {
+    if (v.value == null) continue;
+    const parts = String(v.validTime).split("/"), t0 = Date.parse(parts[0]), n = isoHours(parts[1]);
+    if (isNaN(t0) || !n) continue;
+    for (let i = 0; i < n; i++) hourly.set(t0 + i * H, v.value / 25.4 / n);
+  }
+  if (!hourly.size) return null;
+  const hrs = [...hourly.keys()].sort((a, b) => a - b);
+  const runs = [];
+  for (const h of hrs) {
+    const v = hourly.get(h); if (v < 0.002) continue;
+    const last = runs[runs.length - 1];
+    if (last && h - last.end <= 7 * H) { last.end = h; last.inches += v; } else runs.push({ start: h, end: h, inches: v });
+  }
+  const storm = runs.reduce((a, b) => (!a || b.inches > a.inches ? b : a), null) || { inches: 0, start: hrs[0], end: hrs[0] };
+  const days = {};
+  for (const h of hrs) {
+    const d = new Date(h), k = d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+    (days[k] = days[k] || { t: h, inches: 0 }).inches += hourly.get(h);
+  }
+  return { storm: { inches: storm.inches, start: storm.start, end: storm.end + H }, days: Object.values(days).slice(0, 7) };
+}
+const wd = t => new Date(t).toLocaleDateString([], { weekday: "short" });
+const wdh = t => new Date(t).toLocaleString([], { weekday: "short", hour: "numeric" });
+const inch = n => n < 0.005 ? "–" : n.toFixed(2) + '"';
+function rainHTML(r){
+  if (!r) return "";
+  const s = r.storm, hit = s.inches >= RAIN_ALERT_IN;
+  const banner = hit
+    ? `<div class="wx-rain hit">⚠ HEAVY RAIN WATCH: about ${s.inches.toFixed(1)}" from ${esc(wdh(s.start))} to ${esc(wdh(s.end))}. Finish the list before then.</div>`
+    : `<div class="wx-rain">${s.inches < 0.005 ? "No rain in the forecast." : "No storm of " + RAIN_ALERT_IN + '" or more in the forecast. Wettest stretch: ' + inch(s.inches) + " around " + esc(wd(s.start)) + "."}</div>`;
+  return banner + `<div class="wx-days">${r.days.map(d => `<div class="${d.inches >= RAIN_ALERT_IN ? "hit" : ""}"><b>${esc(wd(d.t))}</b>${inch(d.inches)}</div>`).join("")}</div>`;
+}
+
 function wxRender(){
   let h;
   if (!wx) {
@@ -349,9 +397,10 @@ function wxRender(){
       ${wxErr ? '<button class="wx-btn" id="wx-go">Use my location</button>' : ""}`;
   } else {
     h = `<div class="wx-head"><b>Forecast · ${esc(wx.place || "your location")}</b><span>${wxErr ? "no signal · " : ""}updated ${ago(wx.at)}</span></div>` +
+      rainHTML(wx.rain) +
       wx.alerts.map(a => `<details class="wx-alert${/Severe|Extreme/.test(a.severity) ? " sev" : ""}"><summary>⚠ ${esc(a.event)}${a.ends ? " · until " + esc(a.ends) : ""}</summary><div class="d">${esc(a.headline)}\n\n${esc(a.description)}</div></details>`).join("") +
       wx.periods.map(p => `<details class="wx-p"><summary><span class="n">${esc(p.name)}</span><span class="t">${esc(p.temp)}°</span><span class="r">${p.pop == null ? "" : esc(p.pop) + "%"}</span><span class="s">${esc(p.short)}</span></summary><div class="d">${esc(p.detail)}</div></details>`).join("") +
-      `<div class="wx-note">% = chance of rain/snow. Tap a line for details and wind. Source: National Weather Service, for your phone's position.</div>`;
+      `<div class="wx-note">Rain totals are forecast model amounts (snow counts as its melted water), so they can be off. % = chance of rain/snow. Tap a line for details and wind. Source: National Weather Service, for your phone's position.</div>`;
   }
   wxEl.innerHTML = h;
   const go = document.getElementById("wx-go"); if (go) go.onclick = wxRefresh;
@@ -366,12 +415,13 @@ async function wxLoad(lat, lon){
   const ll = lat.toFixed(4) + "," + lon.toFixed(4);
   const pt = await getJSON("https://api.weather.gov/points/" + ll);
   const rl = pt.properties.relativeLocation && pt.properties.relativeLocation.properties;
-  const [f, a] = await Promise.all([
+  const [f, g, a] = await Promise.all([
     getJSON(pt.properties.forecast),
+    pt.properties.forecastGridData ? getJSON(pt.properties.forecastGridData).catch(() => null) : null,
     getJSON("https://api.weather.gov/alerts/active?point=" + ll).catch(() => ({ features: [] }))
   ]);
   return {
-    at: Date.now(), place: rl ? rl.city + ", " + rl.state : "",
+    at: Date.now(), place: rl ? rl.city + ", " + rl.state : "", rain: rainSummary(g),
     periods: f.properties.periods.slice(0, 6).map(p => ({ name: p.name, temp: p.temperature, pop: p.probabilityOfPrecipitation ? p.probabilityOfPrecipitation.value : null, short: p.shortForecast, detail: p.detailedForecast + (p.windSpeed ? " Wind " + (p.windDirection || "") + " " + p.windSpeed + "." : "") })),
     alerts: (a.features || []).map(x => ({ event: x.properties.event, severity: x.properties.severity || "", headline: x.properties.headline || "", description: String(x.properties.description || "").slice(0, 1500), ends: fmtEnd(x.properties.ends || x.properties.expires) }))
   };

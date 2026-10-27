@@ -6,7 +6,7 @@ Live at https://springv.netlify.app — Netlify publishes this repository automa
 ## Layout
 - `index.html` — the whole app (one file: styles, script, inventory lists).
 - `img/` — compartment photos referenced by `index.html` as `img/<name>`.
-- `shutdown/index.html` — Skull Creek station shutdown checklist (springv.netlify.app/shutdown/). Check-offs are shared by the whole crew with the date and the checker's initials. Also shows a National Weather Service forecast and active alerts for the phone's GPS position (no API key; cached for offline).
+- `shutdown/index.html` — Skull Creek station shutdown checklist (springv.netlify.app/shutdown/). Check-offs are shared by the whole crew with the date and the checker's initials. Also shows a National Weather Service forecast and active alerts for the phone's GPS position (no API key; cached for offline), with a red heavy-rain watch when a storm adds up to `RAIN_ALERT_IN` (0.5") or more.
 - `netlify/functions/shutdown.mts` — small API (`/api/shutdown`) that stores the shutdown check-offs in Netlify Blobs. Needs `package.json` for its dependencies.
 
 ## Where things live in `index.html`
