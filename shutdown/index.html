@@ -55,9 +55,12 @@
   .wx-alert summary{background:#FFF3CD; color:#5c3d00; font-weight:bold; padding:9px 12px; font-size:13.5px; border-top:1px solid var(--line);}
   .wx-alert.sev summary{background:var(--red); color:#fff;}
   .wx-alert .d{padding:8px 12px 10px; font-size:12.5px; line-height:1.4; white-space:pre-wrap; background:#fffaf0;}
-  .wx-p summary{display:grid; grid-template-columns:86px 42px 38px 1fr; gap:6px; align-items:center; padding:8px 12px; font-size:13.5px; border-top:1px solid #ddd;}
-  .wx-p .n{font-weight:bold;} .wx-p .t{font-weight:bold; color:var(--red);} .wx-p .r{color:var(--gray); font-size:12.5px;} .wx-p .s{line-height:1.25;}
-  .wx-p .d{padding:0 12px 10px; font-size:13px; line-height:1.4; color:#333;}
+  .wx-p summary{display:grid; grid-template-columns:1fr 1fr; gap:2px 10px; padding:8px 12px; font-size:13px; border-top:1px solid #ddd;}
+  .wx-p .n{grid-column:1/-1; font-weight:bold; font-size:13.5px;} .wx-p .c{line-height:1.25; min-width:0;} .wx-p .t{color:var(--red); font-size:14px;} .wx-p .r{color:var(--gray); font-size:12.5px;}
+  .wx-p .d{padding:0 12px 10px; font-size:13px; line-height:1.4; color:#333;} .wx-p .d p{margin:4px 0 0;}
+  .wx-split{display:grid; grid-template-columns:1fr 1fr;} .wx-col{min-width:0; border-right:1px solid #ddd;} .wx-col:last-child{border-right:none;}
+  .wx-loc{background:#eee; font-weight:bold; font-size:13px; padding:6px 10px; border-top:1px solid var(--line);} .wx-loc small{font-weight:normal; color:var(--gray); font-size:11px;}
+  .wx-col .wx-rain{padding:7px 10px; font-size:12.5px;} .wx-col .wx-days div{font-size:10.5px; padding:5px 0;} .wx-col .wx-days b{font-size:10px;}
   .wx-note{padding:6px 12px; font-size:11px; color:var(--gray); border-top:1px solid #ddd;}
   .wx-btn{margin:10px 12px; font-size:14px; font-weight:bold; padding:9px 12px; border:2px solid var(--red); background:#fff; color:var(--red); font-family:inherit; cursor:pointer;}
   .wx-msg{padding:10px 12px; font-size:13px; color:var(--gray);}
@@ -341,10 +344,14 @@ fd.value = meta.date || todayISO; fc.value = meta.crew || ""; fw.value = who;
 fd.oninput = () => { meta.date = fd.value; keep(K_META, meta); };
 fc.oninput = () => { meta.crew = fc.value; keep(K_META, meta); };
 fw.oninput = () => { who = fw.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4); fw.value = who; keep(K_WHO, who); };
-/* ---------- weather: National Weather Service forecast + alerts for this phone's GPS position ---------- */
-const K_WX = "skullshut_wx", K_POS = "skullshut_pos";
+/* ---------- weather: National Weather Service forecast + alerts for Dorrington and Long Barn, side by side ---------- */
+const K_WX = "skullshut_wx2";
 const wxEl = document.getElementById("wx");
-let wx = load(K_WX, null), pos = load(K_POS, null), wxErr = "";
+const WX_LOCS = [
+  { name: "Dorrington", lat: 38.3014, lon: -120.2772, elev: "4,770 ft" },
+  { name: "Long Barn",  lat: 38.0953, lon: -120.1236, elev: "5,080 ft" }
+];
+let wx = load(K_WX, null), wxErr = "";
 const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 2 ? "just now" : m < 90 ? m + " min ago" : Math.round(m / 60) + " hr ago"; };
 
 const RAIN_ALERT_IN = 0.5;   // flag any storm that adds up to at least this much rain (inches)
@@ -384,58 +391,63 @@ function rainHTML(r){
   if (!r) return "";
   const s = r.storm, hit = s.inches >= RAIN_ALERT_IN;
   const banner = hit
-    ? `<div class="wx-rain hit">⚠ HEAVY RAIN WATCH: about ${s.inches.toFixed(1)}" from ${esc(wdh(s.start))} to ${esc(wdh(s.end))}. Finish the list before then.</div>`
-    : `<div class="wx-rain">${s.inches < 0.005 ? "No rain in the forecast." : "No storm of " + RAIN_ALERT_IN + '" or more in the forecast. Wettest stretch: ' + inch(s.inches) + " around " + esc(wd(s.start)) + "."}</div>`;
+    ? `<div class="wx-rain hit">⚠ HEAVY RAIN WATCH: about ${s.inches.toFixed(1)}" from ${esc(wdh(s.start))} to ${esc(wdh(s.end))}.</div>`
+    : `<div class="wx-rain">${s.inches < 0.005 ? "No rain in the forecast." : "No storm of " + RAIN_ALERT_IN + '" or more. Wettest: ' + inch(s.inches) + " around " + esc(wd(s.start)) + "."}</div>`;
   return banner + `<div class="wx-days">${r.days.map(d => `<div class="${d.inches >= RAIN_ALERT_IN ? "hit" : ""}"><b>${esc(wd(d.t))}</b>${inch(d.inches)}</div>`).join("")}</div>`;
 }
 
 function wxRender(){
   let h;
   if (!wx) {
-    h = `<div class="wx-head"><b>Weather</b><span>GPS forecast</span></div>
-      <div class="wx-msg">${esc(wxErr || "Getting your location…")}</div>
-      ${wxErr ? '<button class="wx-btn" id="wx-go">Use my location</button>' : ""}`;
+    h = `<div class="wx-head"><b>Weather</b><span>Dorrington + Long Barn</span></div>
+      <div class="wx-msg">${esc(wxErr || "Loading forecast…")}</div>
+      ${wxErr ? '<button class="wx-btn" id="wx-go">Try again</button>' : ""}`;
   } else {
-    h = `<div class="wx-head"><b>Forecast · ${esc(wx.place || "your location")}</b><span>${wxErr ? "no signal · " : ""}updated ${ago(wx.at)}</span></div>` +
-      rainHTML(wx.rain) +
-      wx.alerts.map(a => `<details class="wx-alert${/Severe|Extreme/.test(a.severity) ? " sev" : ""}"><summary>⚠ ${esc(a.event)}${a.ends ? " · until " + esc(a.ends) : ""}</summary><div class="d">${esc(a.headline)}\n\n${esc(a.description)}</div></details>`).join("") +
-      wx.periods.map(p => `<details class="wx-p"><summary><span class="n">${esc(p.name)}</span><span class="t">${esc(p.temp)}°</span><span class="r">${p.pop == null ? "" : esc(p.pop) + "%"}</span><span class="s">${esc(p.short)}</span></summary><div class="d">${esc(p.detail)}</div></details>`).join("") +
-      `<div class="wx-note">Rain totals are forecast model amounts (snow counts as its melted water), so they can be off. % = chance of rain/snow. Tap a line for details and wind. Source: National Weather Service, for your phone's position.</div>`;
+    const L = wx.locs;
+    h = `<div class="wx-head"><b>Forecast · ${L.map(l => esc(l.name)).join(" | ")}</b><span>${wxErr ? "no signal · " : ""}updated ${ago(wx.at)}</span></div>` +
+      `<div class="wx-split">${L.map(l => `<div class="wx-col"><div class="wx-loc">${esc(l.name)} <small>${esc(l.elev)}${l.stale ? " · old data" : ""}</small></div>${l.failed ? '<div class="wx-msg">No forecast yet (no signal).</div>' : rainHTML(l.rain)}</div>`).join("")}</div>`;
+    const am = new Map();
+    L.forEach(l => (l.alerts || []).forEach(a => { const k = a.event + "|" + a.headline; if (!am.has(k)) am.set(k, { a, names: [] }); am.get(k).names.push(l.name); }));
+    h += [...am.values()].map(({ a, names }) => `<details class="wx-alert${/Severe|Extreme/.test(a.severity) ? " sev" : ""}"><summary>⚠ ${esc(a.event)} (${esc(names.join(" + "))})${a.ends ? " · until " + esc(a.ends) : ""}</summary><div class="d">${esc(a.headline)}\n\n${esc(a.description)}</div></details>`).join("");
+    const n = Math.max(0, ...L.map(l => (l.periods || []).length));
+    for (let i = 0; i < n; i++) {
+      const ps = L.map(l => (l.periods || [])[i]);
+      const first = ps.find(Boolean) || {};
+      h += `<details class="wx-p"><summary><span class="n">${esc(first.name)}</span>` +
+        ps.map(p => p ? `<span class="c"><b class="t">${esc(p.temp)}°</b> <span class="r">${p.pop == null ? "" : esc(p.pop) + "%"}</span><br>${esc(p.short)}</span>` : '<span class="c">–</span>').join("") +
+        `</summary><div class="d">${ps.map((p, j) => p ? `<p><b>${esc(L[j].name)}:</b> ${esc(p.detail)}</p>` : "").join("")}</div></details>`;
+    }
+    h += `<div class="wx-note">Rain totals are forecast model amounts (snow counts as its melted water), so they can be off. % = chance of rain/snow. Tap a line for details and wind. Source: National Weather Service, fixed points at Dorrington and Long Barn.</div>`;
   }
   wxEl.innerHTML = h;
   const go = document.getElementById("wx-go"); if (go) go.onclick = wxRefresh;
 }
 const getJSON = async u => { const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
-const nowPos = () => new Promise((res, rej) => {
-  if (!navigator.geolocation) return rej({ code: 0 });
-  navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lon: p.coords.longitude }), rej, { timeout: 15000, maximumAge: 3600000 });
-});
 const fmtEnd = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }); };
-async function wxLoad(lat, lon){
-  const ll = lat.toFixed(4) + "," + lon.toFixed(4);
+async function wxLoad(loc){
+  const ll = loc.lat.toFixed(4) + "," + loc.lon.toFixed(4);
   const pt = await getJSON("https://api.weather.gov/points/" + ll);
-  const rl = pt.properties.relativeLocation && pt.properties.relativeLocation.properties;
   const [f, g, a] = await Promise.all([
     getJSON(pt.properties.forecast),
     pt.properties.forecastGridData ? getJSON(pt.properties.forecastGridData).catch(() => null) : null,
     getJSON("https://api.weather.gov/alerts/active?point=" + ll).catch(() => ({ features: [] }))
   ]);
   return {
-    at: Date.now(), place: rl ? rl.city + ", " + rl.state : "", rain: rainSummary(g),
+    at: Date.now(), name: loc.name, elev: loc.elev, rain: rainSummary(g),
     periods: f.properties.periods.slice(0, 6).map(p => ({ name: p.name, temp: p.temperature, pop: p.probabilityOfPrecipitation ? p.probabilityOfPrecipitation.value : null, short: p.shortForecast, detail: p.detailedForecast + (p.windSpeed ? " Wind " + (p.windDirection || "") + " " + p.windSpeed + "." : "") })),
     alerts: (a.features || []).map(x => ({ event: x.properties.event, severity: x.properties.severity || "", headline: x.properties.headline || "", description: String(x.properties.description || "").slice(0, 1500), ends: fmtEnd(x.properties.ends || x.properties.expires) }))
   };
 }
 async function wxRefresh(){
-  try {
-    try { pos = await nowPos(); keep(K_POS, pos); }
-    catch(e) { if (!pos) throw e; }                       // no fresh GPS fix: use the last one
-    wx = await wxLoad(pos.lat, pos.lon); keep(K_WX, wx); wxErr = "";
-  } catch(e) {
-    wxErr = e && e.code === 1 ? "Location is blocked for this site. Allow location for this page in your browser settings, then tap the button."
-          : e && e.code ? "Couldn't get a GPS position. Tap the button to try again."
-          : "Couldn't load the forecast (no signal, or outside the US).";
-  }
+  const res = await Promise.allSettled(WX_LOCS.map(wxLoad));
+  const old = (wx && wx.locs) || [];
+  if (res.some(r => r.status === "fulfilled")) {
+    const locs = res.map((r, i) => r.status === "fulfilled" ? r.value
+      : old[i] && !old[i].failed ? { ...old[i], stale: true }
+      : { name: WX_LOCS[i].name, elev: WX_LOCS[i].elev, failed: true });
+    wx = { at: Math.min(...locs.filter(l => !l.failed).map(l => l.at)), locs }; keep(K_WX, wx);
+    wxErr = res.every(r => r.status === "fulfilled") ? "" : "partial";
+  } else wxErr = "Couldn't load the forecast (no signal).";
   wxRender();
 }
 wxRender(); wxRefresh();
