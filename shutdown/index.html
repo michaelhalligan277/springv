@@ -48,6 +48,20 @@
   .who .sync{flex:1; text-align:right; font-size:11.5px; color:var(--gray);}
   .who .sync.bad{color:var(--red); font-weight:bold;}
 
+  .wx{margin:12px 0 0; border:1px solid var(--line);}
+  .wx-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px; background:var(--dark); color:#fff; padding:8px 12px; font-size:12.5px; font-weight:bold; text-transform:uppercase; letter-spacing:.4px;}
+  .wx-head span{font-weight:normal; text-transform:none; opacity:.8; font-size:11.5px; text-align:right;}
+  .wx details summary{list-style:none; cursor:pointer;} .wx details summary::-webkit-details-marker{display:none;}
+  .wx-alert summary{background:#FFF3CD; color:#5c3d00; font-weight:bold; padding:9px 12px; font-size:13.5px; border-top:1px solid var(--line);}
+  .wx-alert.sev summary{background:var(--red); color:#fff;}
+  .wx-alert .d{padding:8px 12px 10px; font-size:12.5px; line-height:1.4; white-space:pre-wrap; background:#fffaf0;}
+  .wx-p summary{display:grid; grid-template-columns:86px 42px 38px 1fr; gap:6px; align-items:center; padding:8px 12px; font-size:13.5px; border-top:1px solid #ddd;}
+  .wx-p .n{font-weight:bold;} .wx-p .t{font-weight:bold; color:var(--red);} .wx-p .r{color:var(--gray); font-size:12.5px;} .wx-p .s{line-height:1.25;}
+  .wx-p .d{padding:0 12px 10px; font-size:13px; line-height:1.4; color:#333;}
+  .wx-note{padding:6px 12px; font-size:11px; color:var(--gray); border-top:1px solid #ddd;}
+  .wx-btn{margin:10px 12px; font-size:14px; font-weight:bold; padding:9px 12px; border:2px solid var(--red); background:#fff; color:var(--red); font-family:inherit; cursor:pointer;}
+  .wx-msg{padding:10px 12px; font-size:13px; color:var(--gray);}
+
   .actions{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:2px solid var(--red);
            display:flex; gap:10px; padding:10px 14px calc(10px + env(safe-area-inset-bottom));}
   .actions button{flex:1; font-size:15px; font-weight:bold; padding:12px 6px; border:2px solid var(--red);
@@ -55,7 +69,7 @@
   .actions button.primary{background:var(--red); color:#fff;}
   .foot{font-size:11.5px; color:var(--gray); margin:14px 2px;}
   @media print{
-    .actions,.tabs{display:none;} .panel{display:block !important;} body{padding:0;}
+    .actions,.tabs,.wx,.who{display:none;} .panel{display:block !important;} body{padding:0;}
     .darkbar,.redbar,.badge{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
     .row{break-inside:avoid;}
   }
@@ -74,6 +88,7 @@
     <input id="f-who" type="text" maxlength="4" placeholder="ABC" autocomplete="off" autocapitalize="characters">
     <span class="sync" id="sync">Connecting…</span>
   </div>
+  <div class="wx" id="wx"></div>
   <div class="tabs">
     <button class="tab on" data-tab="today">Today</button>
     <button class="tab" data-tab="list">3-Day List</button>
@@ -320,6 +335,63 @@ fd.value = meta.date || todayISO; fc.value = meta.crew || ""; fw.value = who;
 fd.oninput = () => { meta.date = fd.value; keep(K_META, meta); };
 fc.oninput = () => { meta.crew = fc.value; keep(K_META, meta); };
 fw.oninput = () => { who = fw.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4); fw.value = who; keep(K_WHO, who); };
+/* ---------- weather: National Weather Service forecast + alerts for this phone's GPS position ---------- */
+const K_WX = "skullshut_wx", K_POS = "skullshut_pos";
+const wxEl = document.getElementById("wx");
+let wx = load(K_WX, null), pos = load(K_POS, null), wxErr = "";
+const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 2 ? "just now" : m < 90 ? m + " min ago" : Math.round(m / 60) + " hr ago"; };
+
+function wxRender(){
+  let h;
+  if (!wx) {
+    h = `<div class="wx-head"><b>Weather</b><span>GPS forecast</span></div>
+      <div class="wx-msg">${esc(wxErr || "Getting your location…")}</div>
+      ${wxErr ? '<button class="wx-btn" id="wx-go">Use my location</button>' : ""}`;
+  } else {
+    h = `<div class="wx-head"><b>Forecast · ${esc(wx.place || "your location")}</b><span>${wxErr ? "no signal · " : ""}updated ${ago(wx.at)}</span></div>` +
+      wx.alerts.map(a => `<details class="wx-alert${/Severe|Extreme/.test(a.severity) ? " sev" : ""}"><summary>⚠ ${esc(a.event)}${a.ends ? " · until " + esc(a.ends) : ""}</summary><div class="d">${esc(a.headline)}\n\n${esc(a.description)}</div></details>`).join("") +
+      wx.periods.map(p => `<details class="wx-p"><summary><span class="n">${esc(p.name)}</span><span class="t">${esc(p.temp)}°</span><span class="r">${p.pop == null ? "" : esc(p.pop) + "%"}</span><span class="s">${esc(p.short)}</span></summary><div class="d">${esc(p.detail)}</div></details>`).join("") +
+      `<div class="wx-note">% = chance of rain/snow. Tap a line for details and wind. Source: National Weather Service, for your phone's position.</div>`;
+  }
+  wxEl.innerHTML = h;
+  const go = document.getElementById("wx-go"); if (go) go.onclick = wxRefresh;
+}
+const getJSON = async u => { const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
+const nowPos = () => new Promise((res, rej) => {
+  if (!navigator.geolocation) return rej({ code: 0 });
+  navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lon: p.coords.longitude }), rej, { timeout: 15000, maximumAge: 3600000 });
+});
+const fmtEnd = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }); };
+async function wxLoad(lat, lon){
+  const ll = lat.toFixed(4) + "," + lon.toFixed(4);
+  const pt = await getJSON("https://api.weather.gov/points/" + ll);
+  const rl = pt.properties.relativeLocation && pt.properties.relativeLocation.properties;
+  const [f, a] = await Promise.all([
+    getJSON(pt.properties.forecast),
+    getJSON("https://api.weather.gov/alerts/active?point=" + ll).catch(() => ({ features: [] }))
+  ]);
+  return {
+    at: Date.now(), place: rl ? rl.city + ", " + rl.state : "",
+    periods: f.properties.periods.slice(0, 6).map(p => ({ name: p.name, temp: p.temperature, pop: p.probabilityOfPrecipitation ? p.probabilityOfPrecipitation.value : null, short: p.shortForecast, detail: p.detailedForecast + (p.windSpeed ? " Wind " + (p.windDirection || "") + " " + p.windSpeed + "." : "") })),
+    alerts: (a.features || []).map(x => ({ event: x.properties.event, severity: x.properties.severity || "", headline: x.properties.headline || "", description: String(x.properties.description || "").slice(0, 1500), ends: fmtEnd(x.properties.ends || x.properties.expires) }))
+  };
+}
+async function wxRefresh(){
+  try {
+    try { pos = await nowPos(); keep(K_POS, pos); }
+    catch(e) { if (!pos) throw e; }                       // no fresh GPS fix: use the last one
+    wx = await wxLoad(pos.lat, pos.lon); keep(K_WX, wx); wxErr = "";
+  } catch(e) {
+    wxErr = e && e.code === 1 ? "Location is blocked for this site. Allow location for this page in your browser settings, then tap the button."
+          : e && e.code ? "Couldn't get a GPS position. Tap the button to try again."
+          : "Couldn't load the forecast (no signal, or outside the US).";
+  }
+  wxRender();
+}
+wxRender(); wxRefresh();
+setInterval(wxRefresh, 30 * 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && (!wx || Date.now() - wx.at > 10 * 60 * 1000)) wxRefresh(); });
+
 build();
 sync();
 setInterval(sync, 15000);
