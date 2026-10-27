@@ -439,8 +439,8 @@ async function wxRefresh(){
   wxRender();
 }
 wxRender(); wxRefresh();
-setInterval(wxRefresh, 30 * 60 * 1000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden && (!wx || Date.now() - wx.at > 10 * 60 * 1000)) wxRefresh(); });
+setInterval(wxRefresh, 10 * 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && (!wx || Date.now() - wx.at > 5 * 60 * 1000)) wxRefresh(); });
 
 build();
 sync();
